@@ -1,5 +1,4 @@
 import time
-
 import pygame as pg
 import numpy as np
 import sys
@@ -35,7 +34,7 @@ pivot_i = None
 
 PIECES = [I, J, L, O, S, T, Z]
 random.seed()
-game_speed = 100
+game_speed = 93
 SIZE = WIDTH, HEIGHT = 1186, 964  # (20x10) with 2px between cells
 score = 0
 lines = 0
@@ -120,7 +119,9 @@ def update_board(board, index):
         pg.mixer.Channel(2).play(pg.mixer.Sound(SOUNDS_PATH + "force-hit.wav"))
     lines += line_counter
     if line_counter > 0:
-        score = 999999 if score + (level + 1) * lines_multipliers[line_counter - 1] > 999999 else score + (level + 1) * lines_multipliers[line_counter - 1]
+        score = 999999 if score + (level + 1) * lines_multipliers[line_counter - 1] > 999999 else score + (level + 1) * \
+                                                                                                  lines_multipliers[
+                                                                                                      line_counter - 1]
         font = pg.font.SysFont('Comic Sans MS', 30)
         score_label = font.render("SCORE", False, WHITE)
         pg.draw.rect(screen, BLACK, pg.Rect((WIDTH - 346, 300), (175, 100)))
@@ -180,7 +181,7 @@ def spawn_piece(piece):
             game_over()
         board[2:4, 4:7] = np.copy(piece)
     else:
-        if not np.array_equal( board[2:4, 4:6][board[2:4, 4:6] < 0], []):
+        if not np.array_equal(board[2:4, 4:6][board[2:4, 4:6] < 0], []):
             board[2:4, 4:6] = np.copy(piece)
             game_over()
         board[2:4, 4:6] = np.copy(piece)
