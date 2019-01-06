@@ -8,10 +8,9 @@ from GameController import GameController
 
 
 def main():
-
     WIDTH = 1186
     HEIGHT = 964
-    sm = SoundManager("E:/Tetris-Deep-Neural-Network/sounds/")
+    sm = SoundManager("sounds/")
     pg.init()
     pg.font.init()
     mui = MainMenuUI(WIDTH, HEIGHT)
