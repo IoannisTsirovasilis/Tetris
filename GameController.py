@@ -1,3 +1,5 @@
+import random
+
 import SoundManager
 import GameUI
 import math
@@ -22,6 +24,38 @@ class GameController:
         self.speed = math.floor((0.8-(self.level-1)*0.007) ** (self.level-1) * 1000)
         self.line_multipliers = [40, 100, 300, 1200]
         self.board = np.array([[0 for j in range(10)] for i in range(22)])
+
+        # 0 is Main Menu, 1 is Playing, 2 is Game Over
+        self.game_state = 0
+
+        self.rotated = False
+        self.drop_counter = 0
+        self.rotate_counter = 0
+        self.move_counter = 0
+        self.piece_falling = False
+        self.next_pieces = [np.copy(self.PIECES[random.randint(0, len(self.PIECES) - 1)])]
+        self.theme_playing = False
+        self.game_over_sound_played = False
+        self.can_h_move = True
+
+    def create_piece_sequence(self):
+        for i in range(7):
+            self.next_pieces.append(np.copy(self.PIECES[random.randint(0, len(self.PIECES)-1)]))
+
+    def state_initializer(self, game_state, gui: GameUI):
+        self.game_state = game_state
+        gui.screen.fill(gui.BLACK)
+        self.board = np.array([[0 for j in range (10)] for i in range(22)])
+        self.drop_counter = 0
+        self.rotate_counter = 0
+        self.move_counter = 0
+        self.piece_falling = False
+        self.rotated = False
+        self.next_pieces = [np.copy(self.PIECES[random.randint(0, len(self.PIECES) - 1)])]
+        self.theme_playing = False
+        self.game_over_sound_played = False
+        self.score = 0
+        self.can_h_move = True
 
     def get_piece_color(self, index, gui: GameUI):
         if index == 0:
@@ -107,8 +141,9 @@ class GameController:
                     self.board[c[0][j]][c[1][j] + d] = index
                 # update pivot's position
                 self.pivot[1] += d
+                return True
         except IndexError:
-            return
+            return False
 
     # piece rotation (clock-wise)
     def r_move(self, ptr, index, r):
@@ -120,8 +155,6 @@ class GameController:
             return
         c = self.get_piece_coords()
         # i_rot, j_rot are the coordinates of rotated piece
-        i_rot = 0
-        j_rot = 0
         if any(np.array_equal(ptr, p) for p in [self.I, self.S, self.Z]):
             if not r:
                 try:
@@ -183,11 +216,11 @@ class GameController:
                     if r > 0:
                         self.board[r] = np.copy(self.board[r-1])
         if lines_to_erase == 4:
-            sm.play_sound("line-removal4.wav", 2, 0)
+            sm.play_sound("tetris.wav", 2, 0)
         elif lines_to_erase > 0:
             sm.play_sound("line-remove.wav", 2, 0)
         else:
-            sm.play_sound("force-hit.wav", 2, 0)
+            sm.play_sound("piece-fall.wav", 2, 0)
         self.lines += lines_to_erase
         if lines_to_erase > 0:
             temp = (self.level+1)*self.line_multipliers[lines_to_erase-1]

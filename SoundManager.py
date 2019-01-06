@@ -1,5 +1,6 @@
 import pygame as pg
 
+
 class SoundManager:
     def __init__(self, sounds_path):
         self.mixer = pg.mixer
@@ -8,4 +9,4 @@ class SoundManager:
         self.sounds_path = sounds_path
 
     def play_sound(self, sound, channel, loop):
-        self.mixer.Channel(channel).play(self.mixer.Sound(self.sounds_path +  sound), loop)
+        self.mixer.Channel(channel).play(self.mixer.Sound(self.sounds_path + sound), loop)

@@ -1,5 +1,6 @@
 import pygame as pg
 
+
 class GraphicsManager:
     screen = None
 
