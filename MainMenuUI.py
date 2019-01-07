@@ -5,10 +5,12 @@ class MainMenuUI(GraphicsManager):
     def __init__(self, width, height):
         super().__init__(width, height)
 
-    def __draw_buttons(self):
+    def __draw_play_button(self):
         self.draw_rect(180, 80, self.WIDTH // 2 - 90, self.HEIGHT // 2 - 115, self.GREY)
-        self.draw_rect(180, 80, self.WIDTH // 2 - 90, self.HEIGHT // 2 + 35, self.GREY)
         self.draw_text(self.FONT, 30, "Play", self.WHITE, self.WIDTH // 2 - 30, self.HEIGHT // 2 - 100)
+
+    def __draw_quit_button(self):
+        self.draw_rect(180, 80, self.WIDTH // 2 - 90, self.HEIGHT // 2 + 35, self.GREY)
         self.draw_text(self.FONT, 30, "Quit", self.WHITE, self.WIDTH // 2 - 30, self.HEIGHT // 2 + 50)
 
     def __draw_logo(self):
@@ -27,5 +29,6 @@ class MainMenuUI(GraphicsManager):
 
     def draw_main_menu(self):
         self.screen.fill(self.BLACK)
-        self.__draw_buttons()
+        self.__draw_play_button()
+        self.__draw_quit_button()
         self.__draw_logo()

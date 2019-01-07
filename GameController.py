@@ -7,7 +7,7 @@ import numpy as np
 
 
 class GameController:
-    def __init__(self, fps, level):
+    def __init__(self, fps):
         self.FPS = fps
         self.I = np.array([[1, 1, 1, 1]])
         self.J = np.array([[2, 2, 2], [0, 0, 2]])
@@ -18,14 +18,17 @@ class GameController:
         self.Z = np.array([[7, 7, 0], [0, 7, 7]])
         self.PIECES = [self.I, self.J, self.L, self.O, self.S, self.T, self.Z]
         self.pivot = [2, 5]
+        self.h_speed = 100
+        self.r_speed = 100
         self.score = 0
         self.lines = 0
-        self.level = level
+        self.level = 1
         self.speed = math.floor((0.8-(self.level-1)*0.007) ** (self.level-1) * 1000)
         self.line_multipliers = [40, 100, 300, 1200]
         self.board = np.array([[0 for j in range(10)] for i in range(22)])
+        self.track = "track1.wav"
 
-        # 0 is Main Menu, 1 is Playing, 2 is Game Over
+        # 0 is Main Menu, 1 is Settings, 2 is Playing, 3 is Game Over
         self.game_state = 0
 
         self.rotated = False

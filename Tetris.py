@@ -3,6 +3,7 @@ import numpy as np
 import sys
 from SoundManager import SoundManager
 from MainMenuUI import MainMenuUI
+from SettingsUI import SettingsUI
 from GameUI import GameUI
 from GameController import GameController
 
@@ -14,8 +15,9 @@ def main():
     pg.init()
     pg.font.init()
     mui = MainMenuUI(WIDTH, HEIGHT)
+    sui = SettingsUI(WIDTH, HEIGHT)
     gui = GameUI(WIDTH, HEIGHT)
-    gc = GameController(30, 9)
+    gc = GameController(30)
     pg.time.set_timer(pg.USEREVENT + 1, gc.speed)
     clock = pg.time.Clock()
     while True:
@@ -23,7 +25,7 @@ def main():
         gc.drop_counter += dt
         gc.move_counter += dt
         gc.rotate_counter += dt
-        if gc.move_counter >= gc.speed:
+        if gc.move_counter >= gc.h_speed:
             gc.can_h_move = True
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -37,10 +39,31 @@ def main():
                     sys.exit()
             if not gc.theme_playing:
                 gc.theme_playing = True
-                sm.play_sound("theme.wav", 0, -1)
-            mui.screen.fill(mui.BLACK)
+                sm.play_sound("track1.wav", 0, -1)
             mui.draw_main_menu()
         elif gc.game_state == 1:
+            if pg.mouse.get_pressed()[0]:
+                mouse = pg.mouse.get_pos()
+                if WIDTH // 2 - 90 < mouse[0] < WIDTH // 2 + 90 and HEIGHT // 2 + 300 < mouse[1] < HEIGHT // 2 + 380:
+                    gc.game_state = 2
+                if WIDTH // 2 - 275 < mouse[0] < WIDTH // 2 - 125:
+                    for i in range(3):
+                        dy = (i+1)*70
+                        if HEIGHT // 2 - 148 + dy < mouse[1] < HEIGHT // 2 - 148 + 50 + dy:
+                            gc.track = "track" + str(i+1) + ".wav"
+                            sm.play_sound(gc.track, 0, -1)
+                if WIDTH // 2 + 240 < mouse[0] < WIDTH // 2 + 290:
+                    for i in range(5):
+                        dy = 50*(i+1)
+                        if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
+                            gc.level = 2*i + 1
+                if WIDTH // 2 + 290 < mouse[0] < WIDTH // 2 + 340:
+                    for i in range(5):
+                        dy = 50*(i+1)
+                        if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
+                            gc.level = 2*(i+1)
+            sui.draw_settings(gc.level)
+        elif gc.game_state == 2:
             if len(gc.next_pieces) <= 2:
                 gc.create_piece_sequence()
             if not gc.piece_falling:
@@ -51,22 +74,22 @@ def main():
                 index = pts[pts > 0][0]
                 game_over = gc.spawn_piece(pts)
                 if game_over:
-                    gc.game_state = 2
+                    gc.game_state = 3
                 pf = pts[:]
             else:
                 if pg.key.get_pressed()[pg.K_DOWN]:
                     gc.drop_counter *= 3
-                if pg.key.get_pressed()[pg.K_LEFT] and gc.move_counter >= gc.speed and gc.can_h_move:
+                if pg.key.get_pressed()[pg.K_LEFT] and gc.move_counter >= gc.h_speed and gc.can_h_move:
                     gc.can_h_move = False
                     gc.move_counter = 0
                     if gc.h_move(-1, index):
                         sm.play_sound("piece-move.wav", 1, 0)
-                if pg.key.get_pressed()[pg.K_RIGHT] and gc.move_counter >= gc.speed and gc.can_h_move:
+                if pg.key.get_pressed()[pg.K_RIGHT] and gc.move_counter >= gc.h_speed and gc.can_h_move:
                     gc.can_h_move = False
                     gc.move_counter = 0
                     if gc.h_move(1, index):
                         sm.play_sound("piece-move.wav", 1, 0)
-                if pg.key.get_pressed()[pg.K_UP] and gc.rotate_counter >= 2*gc.speed:
+                if pg.key.get_pressed()[pg.K_UP] and gc.rotate_counter >= gc.r_speed:
                     sm.play_sound("piece-rotate.wav", 3, 0)
                     gc.rotate_counter = 0
                     gc.rotated = gc.r_move(pf, index, gc.rotated)
@@ -75,15 +98,15 @@ def main():
                     gc.piece_falling = gc.v_move(index, sm)
             gui.screen.fill(gui.BLACK)
             gui.draw_game_ui(gc, next_piece, np.array_equal(next_piece, gc.I))
-        elif gc.game_state == 2:
+        elif gc.game_state == 3:
             if not gc.game_over_sound_played:
                 gc.game_over_sound_played = gc.game_over(sm)
             if pg.key.get_pressed()[pg.K_SPACE]:
-                gc.state_initializer(1, gui)
-                sm.play_sound("theme.wav", 0, -1)
+                gc.state_initializer(2, gui)
+                sm.play_sound(gc.track, 0, -1)
             if pg.key.get_pressed()[pg.K_ESCAPE]:
                 gc.state_initializer(0, gui)
-                sm.play_sound("theme.wav", 0, -1)
+                sm.play_sound(gc.track, 0, -1)
         pg.display.update()
 
 
