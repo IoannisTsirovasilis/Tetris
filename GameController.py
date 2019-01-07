@@ -18,12 +18,12 @@ class GameController:
         self.Z = np.array([[7, 7, 0], [0, 7, 7]])
         self.PIECES = [self.I, self.J, self.L, self.O, self.S, self.T, self.Z]
         self.pivot = [2, 5]
-        self.h_speed = 100
-        self.r_speed = 100
+        self.h_speed = 200
+        self.r_speed = 200
         self.score = 0
         self.lines = 0
         self.level = 1
-        self.speed = math.floor((0.8-(self.level-1)*0.007) ** (self.level-1) * 1000)
+        self.speed = 1
         self.line_multipliers = [40, 100, 300, 1200]
         self.board = np.array([[0 for j in range(10)] for i in range(22)])
         self.track = "track1.wav"
@@ -40,6 +40,9 @@ class GameController:
         self.theme_playing = False
         self.game_over_sound_played = False
         self.can_h_move = True
+
+    def set_speed(self, level):
+        self.speed = math.floor((0.8-(level-1)*0.007) ** (level-1) * 1000)
 
     def create_piece_sequence(self):
         for i in range(7):

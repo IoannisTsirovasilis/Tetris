@@ -62,6 +62,7 @@ def main():
                         dy = 50*(i+1)
                         if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
                             gc.level = 2*(i+1)
+                            gc.set_speed(gc.level)
             sui.draw_settings(gc.level)
         elif gc.game_state == 2:
             if len(gc.next_pieces) <= 2:
