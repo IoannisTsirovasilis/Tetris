@@ -18,10 +18,9 @@ def main():
     sui = SettingsUI(WIDTH, HEIGHT)
     gui = GameUI(WIDTH, HEIGHT)
     gc = GameController(60)
-    pg.time.set_timer(pg.USEREVENT + 1, gc.speed)
     clock = pg.time.Clock()
     while True:
-        dt = (clock.tick(gc.FPS))
+        dt = clock.tick(gc.FPS)
         gc.drop_counter += dt
         gc.move_counter += dt
         gc.rotate_counter += dt
@@ -58,6 +57,7 @@ def main():
                         dy = 50*(i+1)
                         if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
                             gc.level = 2*i + 1
+                            gc.set_speed(gc.level)
                 if WIDTH // 2 + 290 < mouse[0] < WIDTH // 2 + 340:
                     for i in range(5):
                         dy = 50*(i+1)
