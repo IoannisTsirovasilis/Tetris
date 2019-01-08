@@ -17,7 +17,7 @@ def main():
     mui = MainMenuUI(WIDTH, HEIGHT)
     sui = SettingsUI(WIDTH, HEIGHT)
     gui = GameUI(WIDTH, HEIGHT)
-    gc = GameController(30)
+    gc = GameController(60)
     pg.time.set_timer(pg.USEREVENT + 1, gc.speed)
     clock = pg.time.Clock()
     while True:
@@ -39,7 +39,8 @@ def main():
                     sys.exit()
             if not gc.theme_playing:
                 gc.theme_playing = True
-                sm.play_sound("track1.wav", 0, -1)
+                gc.track = "track1.wav"
+                sm.play_sound(gc.track, 0, -1)
             mui.draw_main_menu()
         elif gc.game_state == 1:
             if pg.mouse.get_pressed()[0]:
