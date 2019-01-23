@@ -21,7 +21,7 @@ class GameController:
         self.score = 0
         self.h_speed = 200
         self.lines = 0
-        self.level = 1
+        self.level = 0
         self.speed = 1000
         self.line_multipliers = [40, 100, 300, 1200]
         self.board = np.array([[0 for j in range(10)] for i in range(22)])
@@ -41,7 +41,7 @@ class GameController:
         self.can_rotate = True
 
     def set_speed(self, level):
-        self.speed = math.floor((0.8-(level-1)*0.007) ** (level-1) * 1000)
+        self.speed = math.floor((0.8 - level * 0.007) ** level * 1000)
 
     def create_piece_sequence(self):
         for i in range(7):

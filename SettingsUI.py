@@ -49,7 +49,7 @@ class SettingsUI(GraphicsManager):
                 dy = 50*(i+1)
                 if j == 1:
                     dx = 50
-                if level == 2*i+j+1:
+                if level == 2*i+j:
                     self.__draw_level_label(dx, dy, str(2*i+j), self.BLACK)
                     continue
                 self.__draw_level_label(dx, dy, str(2 * i + j), self.WHITE)

@@ -31,6 +31,9 @@ def main():
             if event.type == pg.QUIT:
                 sys.exit()
         if gc.game_state == 0:
+            if gc.level != 0:
+                gc.level = 0
+                gc.set_speed(gc.level)
             if pg.mouse.get_pressed()[0]:
                 mouse = pg.mouse.get_pos()
                 if WIDTH // 2 - 90 < mouse[0] < WIDTH // 2 + 90 and HEIGHT // 2 - 115 < mouse[1] < HEIGHT // 2 - 35:
@@ -57,13 +60,13 @@ def main():
                     for i in range(5):
                         dy = 50*(i+1)
                         if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
-                            gc.level = 2*i + 1
+                            gc.level = 2*i
                             gc.set_speed(gc.level)
                 if WIDTH // 2 + 290 < mouse[0] < WIDTH // 2 + 340:
                     for i in range(5):
                         dy = 50*(i+1)
                         if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
-                            gc.level = 2*(i+1)
+                            gc.level = 2*i+1
                             gc.set_speed(gc.level)
             sui.draw_settings(gc.level)
         elif gc.game_state == 2:
