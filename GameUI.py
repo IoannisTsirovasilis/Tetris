@@ -45,11 +45,16 @@ class GameUI(GraphicsManager):
         self.draw_text(self.FONT, 30, "Press Escape To Return To Main Menu", self.WHITE, self.WIDTH // 2 - 270,
                        self.HEIGHT // 2 - 20)
 
+    def __draw_level_board(self, level):
+        self.draw_rect(175, 60, self.WIDTH - 346, 650, self.GREY)
+        self.draw_text(self.FONT, 30, "LEVEL " + str(level).zfill(2), self.WHITE, self.WIDTH - 324, 655)
+
     def draw_game_ui(self, gc: GameController, next_piece, is_I):
         self.__draw_game_board(gc)
         self.__draw_next_piece_board(gc, next_piece, is_I)
         self.__draw_score_board(gc.score)
         self.__draw_lines_board(gc.lines)
+        self.__draw_level_board(gc.level)
         if gc.game_state == 3:
             self.__draw_game_over()
 

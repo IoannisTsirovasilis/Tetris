@@ -19,9 +19,11 @@ class GameController:
         self.PIECES = [self.I, self.J, self.L, self.O, self.S, self.T, self.Z]
         self.pivot = [2, 5]
         self.score = 0
-        self.h_speed = 200
+        self.h_speed = 150
         self.lines = 0
         self.level = 0
+        self.starting_level = 0
+        self.lines_to_level_up = 10
         self.speed = 1000
         self.line_multipliers = [40, 100, 300, 1200]
         self.board = np.array([[0 for j in range(10)] for i in range(22)])
@@ -51,8 +53,12 @@ class GameController:
         self.game_state = game_state
         gui.screen.fill(gui.BLACK)
         self.board = np.array([[0 for j in range (10)] for i in range(22)])
+        self.level = self.starting_level
+        self.set_speed(self.starting_level)
         self.move_counter = 0
         self.drop_counter = 0
+        self.lines_to_level_up = 10
+        self.lines = 0
         self.piece_falling = False
         self.rotated = False
         self.next_pieces = [np.copy(self.PIECES[random.randint(0, len(self.PIECES) - 1)])]
@@ -233,6 +239,19 @@ class GameController:
                 self.score = 999999
             else:
                 self.score += temp
+        if self.level != 9:
+            if self.lines >= self.lines_to_level_up:
+                self.lines_to_level_up += 10
+                self.level_up(sm)
+        elif self.level == 9:
+            if self.lines >= 100:
+                self.lines_to_level_up = 110
+                self.level_up(sm)
+
+    def level_up(self, sm: SoundManager):
+        self.level += 1
+        self.set_speed(self.level)
+        sm.play_sound("level-up.wav", 4, 0)
 
     def spawn_piece(self, pts):
         game_over = False

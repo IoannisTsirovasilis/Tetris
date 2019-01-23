@@ -31,9 +31,9 @@ def main():
             if event.type == pg.QUIT:
                 sys.exit()
         if gc.game_state == 0:
-            if gc.level != 0:
-                gc.level = 0
-                gc.set_speed(gc.level)
+            if gc.starting_level != 0:
+                gc.starting_level = 0
+                gc.set_speed(gc.starting_level)
             if pg.mouse.get_pressed()[0]:
                 mouse = pg.mouse.get_pos()
                 if WIDTH // 2 - 90 < mouse[0] < WIDTH // 2 + 90 and HEIGHT // 2 - 115 < mouse[1] < HEIGHT // 2 - 35:
@@ -50,6 +50,7 @@ def main():
                 mouse = pg.mouse.get_pos()
                 if WIDTH // 2 - 90 < mouse[0] < WIDTH // 2 + 90 and HEIGHT // 2 + 300 < mouse[1] < HEIGHT // 2 + 380:
                     gc.game_state = 2
+                    gc.level = gc.starting_level
                 if WIDTH // 2 - 275 < mouse[0] < WIDTH // 2 - 125:
                     for i in range(3):
                         dy = (i+1)*70
@@ -60,15 +61,15 @@ def main():
                     for i in range(5):
                         dy = 50*(i+1)
                         if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
-                            gc.level = 2*i
-                            gc.set_speed(gc.level)
+                            gc.starting_level = 2*i
+                            gc.set_speed(gc.starting_level)
                 if WIDTH // 2 + 290 < mouse[0] < WIDTH // 2 + 340:
                     for i in range(5):
                         dy = 50*(i+1)
                         if HEIGHT // 2 - 140 + dy < mouse[1] < HEIGHT // 2 - 140 + 50 + dy:
-                            gc.level = 2*i+1
-                            gc.set_speed(gc.level)
-            sui.draw_settings(gc.level)
+                            gc.starting_level = 2*i+1
+                            gc.set_speed(gc.starting_level)
+            sui.draw_settings(gc.starting_level)
         elif gc.game_state == 2:
             if len(gc.next_pieces) <= 2:
                 gc.create_piece_sequence()
