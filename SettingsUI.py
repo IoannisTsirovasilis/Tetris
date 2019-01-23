@@ -39,7 +39,6 @@ class SettingsUI(GraphicsManager):
             for l in letter[0]:
                 self.draw_rect(35, 35, 2 * (l[1] + 1) + 35 * l[1], 2 * (l[0] + 1) + 35 * l[0], letter[1])
 
-
     def draw_settings(self, level):
         self.screen.fill(self.BLACK)
         self.__draw_logo()

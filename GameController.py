@@ -19,6 +19,7 @@ class GameController:
         self.PIECES = [self.I, self.J, self.L, self.O, self.S, self.T, self.Z]
         self.pivot = [2, 5]
         self.score = 0
+        self.h_speed = 200
         self.lines = 0
         self.level = 1
         self.speed = 1000
@@ -31,6 +32,7 @@ class GameController:
 
         self.rotated = False
         self.drop_counter = 0
+        self.move_counter = 0
         self.piece_falling = False
         self.next_pieces = [np.copy(self.PIECES[random.randint(0, len(self.PIECES) - 1)])]
         self.theme_playing = False
@@ -49,6 +51,7 @@ class GameController:
         self.game_state = game_state
         gui.screen.fill(gui.BLACK)
         self.board = np.array([[0 for j in range (10)] for i in range(22)])
+        self.move_counter = 0
         self.drop_counter = 0
         self.piece_falling = False
         self.rotated = False

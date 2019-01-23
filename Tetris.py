@@ -22,7 +22,8 @@ def main():
     while True:
         dt = clock.tick(gc.FPS)
         gc.drop_counter += dt
-        if not pg.key.get_pressed()[pg.K_LEFT] and not pg.key.get_pressed()[pg.K_RIGHT]:
+        gc.move_counter += dt
+        if gc.move_counter >= gc.h_speed:
             gc.can_h_move = True
         if not pg.key.get_pressed()[pg.K_UP]:
             gc.can_rotate = True
@@ -81,12 +82,14 @@ def main():
             else:
                 if pg.key.get_pressed()[pg.K_DOWN]:
                     gc.drop_counter *= 3
-                if pg.key.get_pressed()[pg.K_LEFT] and gc.can_h_move:
+                if pg.key.get_pressed()[pg.K_LEFT] and gc.move_counter >= gc.h_speed and gc.can_h_move:
                     gc.can_h_move = False
+                    gc.move_counter = 0
                     if gc.h_move(-1, index):
                         sm.play_sound("piece-move.wav", 1, 0)
-                if pg.key.get_pressed()[pg.K_RIGHT] and gc.can_h_move:
+                if pg.key.get_pressed()[pg.K_RIGHT] and gc.move_counter >= gc.h_speed and gc.can_h_move:
                     gc.can_h_move = False
+                    gc.move_counter = 0
                     if gc.h_move(1, index):
                         sm.play_sound("piece-move.wav", 1, 0)
                 if pg.key.get_pressed()[pg.K_UP] and gc.can_rotate:

@@ -39,9 +39,17 @@ class GameUI(GraphicsManager):
         self.draw_text(self.FONT, 30, "LINES", self.WHITE, self.WIDTH - 311, 155)
         self.draw_text(self.FONT, 30, str.zfill(str(lines), 3), self.WHITE, self.WIDTH - 291, 205)
 
+    def __draw_game_over(self):
+        self.draw_text(self.FONT, 30, "Press Space To Retry", self.WHITE, self.WIDTH // 2 - 150, self.HEIGHT // 2 - 100)
+        self.draw_text(self.FONT, 30, "Or", self.WHITE, self.WIDTH // 2 - 30, self.HEIGHT // 2 - 60)
+        self.draw_text(self.FONT, 30, "Press Escape To Return To Main Menu", self.WHITE, self.WIDTH // 2 - 270,
+                       self.HEIGHT // 2 - 20)
+
     def draw_game_ui(self, gc: GameController, next_piece, is_I):
         self.__draw_game_board(gc)
         self.__draw_next_piece_board(gc, next_piece, is_I)
         self.__draw_score_board(gc.score)
         self.__draw_lines_board(gc.lines)
+        if gc.game_state == 3:
+            self.__draw_game_over()
 
