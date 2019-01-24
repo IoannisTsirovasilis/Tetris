@@ -37,7 +37,7 @@ press Escape to return to the main menu.
 
 You can replace current sound effects with your preffered ones by replacing respective files in "sounds" folder.
 
-** Authors**
+**Authors**
 
 Ioannis Tsirovasilis
 
