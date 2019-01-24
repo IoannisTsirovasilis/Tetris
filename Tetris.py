@@ -21,12 +21,6 @@ def main():
     clock = pg.time.Clock()
     while True:
         dt = clock.tick(gc.FPS)
-        gc.drop_counter += dt
-        gc.move_counter += dt
-        if gc.move_counter >= gc.h_speed:
-            gc.can_h_move = True
-        if not pg.key.get_pressed()[pg.K_UP]:
-            gc.can_rotate = True
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 sys.exit()
@@ -71,6 +65,12 @@ def main():
                             gc.set_speed(gc.starting_level)
             sui.draw_settings(gc.starting_level)
         elif gc.game_state == 2:
+            gc.drop_counter += dt
+            gc.move_counter += dt
+            if gc.move_counter >= gc.h_speed:
+                gc.can_h_move = True
+            if not pg.key.get_pressed()[pg.K_UP]:
+                gc.can_rotate = True
             if len(gc.next_pieces) <= 2:
                 gc.create_piece_sequence()
             if not gc.piece_falling:
