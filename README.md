@@ -1,4 +1,4 @@
-**Tetris**
+## Tetris
 
 Classic Tetris game developed using Python.
 
@@ -14,6 +14,7 @@ Below are listed all the necessary components for the game to run.
 * numpy 1.16.0 (currently latest version)
 * pygame 1.9.4 (currently latest version)
 
+
 **How To Run**
 
 From your favorite framework
@@ -24,6 +25,7 @@ From terminal browse to the folder where python.exe lies or add python to PATH.
 Type "pip install numpy==1.16.0" to install numpy and "pip install pygame==1.9.4" to install pygame without the quotes.
 After installations complete type "python Tetris.py" without the quotes and the game will start!
 
+
 **Controls**
 
 Navigate with mouse the the main menu and settings menu.
@@ -33,13 +35,22 @@ Use Up Arrow to rotate pieces clockwise.
 At game over you can press Space to restart with previous settings or
 press Escape to return to the main menu.
 
+
 **Sound Effects**
 
 You can replace current sound effects with your preffered ones by replacing respective files in "sounds" folder.
+Keep in mind that the file format should be .wav
 
-** Authors**
+
+**Issues**
+
+Current version of pygame has a bug which may cause a segmantation fault while playing.
+
+
+**Authors**
 
 Ioannis Tsirovasilis
+
 
 **License**
 
