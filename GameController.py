@@ -157,6 +157,8 @@ class GameController:
             return False
 
     # piece rotation (clock-wise)
+    # It works with pivoting. When you see the game board the block at first row and sixth column plays the role
+    # of the pivot. All other piece's block rotate around this block. That's what this method accomplishes.
     def r_move(self, ptr, index, r):
         # p stands for piece to rotate
         # r stands for rotated {True, False}
@@ -167,6 +169,9 @@ class GameController:
         c = self.get_piece_coords()
         # i_rot, j_rot are the coordinates of rotated piece
         if any(np.array_equal(ptr, p) for p in [self.I, self.S, self.Z]):
+            # I, S and Z have a different rotation. What the code below does is that it returns the piece to its
+            # spawn state every second rotation.
+            # so if it's not r (rotated) then perform a typical rotation
             if not r:
                 try:
                     for j in range(4):
@@ -191,6 +196,8 @@ class GameController:
                         # redraw block in new position
                         self.board[i_rot][j_rot] = index
                 return True
+        # else if it is rotated, return it to its original state.
+        # The code below also works for L,J and T pieces.
         try:
             for j in range(4):
                 i_rot = c[1][j] - self.pivot[1] + self.pivot[0]
@@ -239,6 +246,9 @@ class GameController:
                 self.score = 999999
             else:
                 self.score += temp
+        # The game levels up every 10 line clearances. There is catch though.
+        # For the game to reach level 10, the player has to clear 100 lines.
+        # So if you start from level 9, the game won't level up at the first 10 lines but when you clear 100 lines.
         if self.level != 9:
             if self.lines >= self.lines_to_level_up:
                 self.lines_to_level_up += 10

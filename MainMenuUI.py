@@ -14,6 +14,7 @@ class MainMenuUI(GraphicsManager):
         self.draw_text(self.FONT, 30, "Quit", self.WHITE, self.WIDTH // 2 - 30, self.HEIGHT // 2 + 50)
 
     def __draw_logo(self):
+        #   These are the positions of the screen blocks that will be painted to draw tetris logo
         t = [(1, 4), (1, 5), (1, 6), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5)]
         e = [(1, 8), (1, 9), (1, 10), (2, 8), (3, 8), (4, 8), (4, 9), (4, 10), (5, 8), (6, 8), (7, 8), (7, 9), (7, 10)]
         t2 = [(1, 12), (1, 13), (1, 14), (2, 13), (3, 13), (4, 13), (5, 13), (6, 13), (7, 13)]

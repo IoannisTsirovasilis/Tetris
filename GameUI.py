@@ -7,6 +7,7 @@ class GameUI(GraphicsManager):
         super().__init__(width, height)
 
     def __draw_game_board(self, gc: GameController):
+        # Pieces are 35x35 and between its block there is a 2-pixels black padding
         for i in range(22):
             for j in range(10):
                 if i in [0, 1]:

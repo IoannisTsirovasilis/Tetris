@@ -43,6 +43,7 @@ class SettingsUI(GraphicsManager):
         self.screen.fill(self.BLACK)
         self.__draw_logo()
         self.__draw_level_select_board()
+        # Draw level numbers on screen, 2 for each row
         for i in range(5):
             for j in range(2):
                 dx = 0
