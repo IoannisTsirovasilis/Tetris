@@ -17,7 +17,6 @@ Below are listed all the necessary components for the game to run.
 
 **How To Run**
 
-From your favorite framework
 You can open your favorite python framework and run Tetris.py.
 You will have to install numpy and pygame.
 
