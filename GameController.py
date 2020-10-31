@@ -4,12 +4,12 @@ import numpy as np
 import GraphicsManager
 
 I = np.array([[1, 1, 1, 1]])
-J = np.array([[2, 2, 2], [0, 0, 2]])
-L = np.array([[3, 3, 3], [3, 0, 0]])
-O = np.array([[4, 4], [4, 4]])
-S = np.array([[0, 5, 5], [5, 5, 0]])
-T = np.array([[6, 6, 6], [0, 6, 0]])
-Z = np.array([[7, 7, 0], [0, 7, 7]])
+J = np.array([[1, 1, 1], [0, 0, 1]])
+L = np.array([[1, 1, 1], [1, 0, 0]])
+O = np.array([[1, 1], [1, 1]])
+S = np.array([[0, 1, 1], [1, 1, 0]])
+T = np.array([[1, 1, 1], [0, 1, 0]])
+Z = np.array([[1, 1, 0], [0, 1, 1]])
 PIECES = [I, J, L, O, S, T, Z]
 PIVOT = [2, 5]
 H_SPEED = 80
@@ -27,7 +27,7 @@ def calculate_speed(level):
 
 
 def get_piece_color(index):
-    return GraphicsManager.PIECES_COLORS[abs(index)]
+    return GraphicsManager.PIECES_COLORS[index]
 
 
 def get_piece_coords():
