@@ -19,6 +19,8 @@ BOARD_HEIGHT = 22
 STARTING_LEVEL = 9
 PLAYING_STATE = 1
 GAME_OVER_STATE = 0
+MAP_BLOCK = -1
+MAP_EMPTY = 0
 BOARD = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=int)
 
 
@@ -168,6 +170,7 @@ def game_over():
 
 class GameController:
     def __init__(self, fps):
+        self.state_initializer()
         self.fps = fps
         self.score = 0
         self.lines = 0
@@ -183,6 +186,10 @@ class GameController:
         self.next_pieces = [np.copy(PIECES[random.randint(0, len(PIECES) - 1)])]
         self.can_h_move = True
         self.can_rotate = True
+        self.holes = 0
+        self.total_bumpiness = 0
+        self.total_height = 0
+        self.previous_lines = self.lines
 
     def state_initializer(self):
         self.game_state = PLAYING_STATE
@@ -199,6 +206,10 @@ class GameController:
         self.score = 0
         self.can_h_move = True
         self.can_rotate = True
+        self.holes = 0
+        self.total_bumpiness = 0
+        self.total_height = 0
+        self.previous_lines = self.lines
 
     def set_speed(self, level):
         self.speed = calculate_speed(level)
@@ -266,3 +277,47 @@ class GameController:
     def level_up(self):
         self.level += 1
         self.set_speed(self.level)
+
+    def number_of_holes(self):
+        '''Number of holes in the board (empty sqquare with at least one block above it)'''
+        holes = 0
+
+        for col in zip(*BOARD):
+            i = 0
+            while i < BOARD_HEIGHT and col[i] != MAP_BLOCK:
+                i += 1
+            holes += len([x for x in col[i + 1:] if x == MAP_EMPTY])
+
+        return holes
+
+    def bumpiness(self):
+        '''Sum of the differences of heights between pair of columns'''
+        total_bumpiness = 0
+        max_bumpiness = 0
+        min_ys = []
+
+        for col in zip(*BOARD):
+            i = 0
+            while i < BOARD_HEIGHT and col[i] != MAP_BLOCK:
+                i += 1
+            min_ys.append(i)
+
+        for i in range(len(min_ys) - 1):
+            bumpiness = abs(min_ys[i] - min_ys[i + 1])
+            max_bumpiness = max(bumpiness, max_bumpiness)
+            total_bumpiness += abs(min_ys[i] - min_ys[i + 1])
+
+        return total_bumpiness, max_bumpiness
+
+    def height(self):
+        '''Sum and maximum height of the board'''
+        sum_height = 0
+
+        for col in zip(*BOARD):
+            i = 0
+            while i < BOARD_HEIGHT and col[i] == MAP_EMPTY:
+                i += 1
+            height = BOARD_HEIGHT - i
+            sum_height += height
+
+        return sum_height

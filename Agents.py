@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import Tetris
+import GameController
 
 
 # Configuration paramaters for the whole setup
@@ -14,7 +15,7 @@ epsilon_max = 1.0  # Maximum epsilon greedy parameter
 epsilon_interval = (
     epsilon_max - epsilon_min
 )  # Rate at which to reduce chance of random action being taken
-batch_size = 32  # Size of batch taken from replay buffer
+batch_size = 64  # Size of batch taken from replay buffer
 max_steps_per_episode = 10000
 
 num_actions = 4
@@ -26,24 +27,21 @@ ACTIONS = {
     'Rotate': 3
 }
 
-
 def create_q_model():
     # Network defined by the Deepmind paper
-    inputs = layers.Input(shape=(22, 10, 1))
+    inputs = layers.Input(shape=(GameController.BOARD_HEIGHT, GameController.BOARD_WIDTH, 1))
 
     # Convolutions on the frames on the screen
-    layer1 = layers.Conv2D(32, 8, strides=4, activation="relu")(inputs)
-    #layer2 = layers.Conv2D(64, 4, strides=2, activation="relu")(layer1)
-    #layer3 = layers.Conv2D(64, 3, strides=1, activation="relu")(layer2)
+    layer1 = layers.Conv2D(8, 4, activation="relu")(inputs)
+    layer2 = layers.Conv2D(16, 2, activation="relu")(layer1)
+    layer3 = layers.Conv2D(16, 1, activation="relu")(layer2)
 
-    layer4 = layers.Flatten()(layer1)
+    layer4 = layers.Flatten()(layer3)
 
-    layer5 = layers.Dense(512, activation="relu")(layer4)
-    action = layers.Dense(num_actions, activation="linear")(layer5)
+    layer5 = layers.Dense(128, activation="relu")(layer4)
+    action = layers.Dense(num_actions, activation="softmax")(layer5)
 
-    model = keras.Model(inputs=inputs, outputs=action)
-    print(model.summary())
-    return model
+    return keras.Model(inputs=inputs, outputs=action)
 
 
 # The first model makes the predictions for Q-values which are used to
@@ -82,12 +80,12 @@ update_after_actions = 4
 update_target_network = 10000
 # Using huber loss for stability
 loss_function = keras.losses.Huber()
-
 env = Tetris.Tetris()
 while True:  # Run until solved
     state = env.get_state()
     episode_reward = 0
-
+    if episode_count % 100 == 0:
+        print("Episode: " + str(episode_count))
     for timestep in range(1, max_steps_per_episode):
         # env.render(); Adding this line would show the attempts
         # of the agent in a pop up window.
@@ -123,8 +121,6 @@ while True:  # Run until solved
         done_history.append(done)
         rewards_history.append(reward)
         state = state_next
-
-        print(rewards_history[-1])
 
         # Update every fourth frame and once batch size is over 32
         if frame_count % update_after_actions == 0 and len(done_history) > batch_size:
@@ -194,6 +190,6 @@ while True:  # Run until solved
 
     episode_count += 1
 
-    if running_reward > 40:  # Condition to consider the task solved
-        print("Solved at episode {}!".format(episode_count))
-        break
+    # if running_reward > 40:  # Condition to consider the task solved
+    #     print("Solved at episode {}!".format(episode_count))
+    #     break
