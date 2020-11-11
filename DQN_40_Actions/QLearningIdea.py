@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Dropout, Flatten, Input
-from DQN import GameControllerIdea as GameController, TetrisQLearningIdea as Tetris
+from DQN_40_Actions import GameControllerIdea as GameController, TetrisQLearningIdea as Tetris
 from time import sleep
 import sys
 
@@ -18,18 +18,13 @@ epsilon_interval = (
 batch_size = 32  # Size of batch taken from replay buffer
 max_steps_per_episode = 10000
 
-num_actions = 4
+num_actions = 40
 
-ACTIONS = {
-    'Nothing': 0,
-    'Right': 1,
-    'Left': 2,
-    'Rotate': 3
-}
+ACTIONS = [(transform, rotation) for transform in range(0 - 5, GameController.BOARD_WIDTH - 5) for rotation in range(4)]
 
 INPUT_SHAPE = (GameController.BOARD_HEIGHT - 2, GameController.BOARD_WIDTH, 1)
 
-print("DQN")
+print("40 Actions")
 sleep(1)
 
 
@@ -37,17 +32,14 @@ def create_q_model():
     # Network defined by the Deepmind paper
     model = keras.models.Sequential()
     model.add(Input(shape=INPUT_SHAPE, dtype="float32"))
-    model.add(Conv2D(32, 1, activation="relu"))
-    model.add(Conv2D(32, 1, activation="relu"))
-    model.add(Conv2D(64, 1, activation="relu"))
-    model.add(Conv2D(128, 1, activation="relu"))
-    model.add(Conv2D(128, 1, activation="relu"))
+    model.add(Conv2D(32, 5, strides=(1, 1), activation="relu"))
+    model.add(Conv2D(64, 3, strides=(1, 1), activation="relu"))
+    model.add(Conv2D(128, 3, strides=(1, 1), activation="relu"))
     model.add(Flatten())
-    model.add(Dropout(0.25))
-    model.add(Dense(128, activation="relu"))
-    model.add(Dropout(0.25))
     model.add(Dense(512, activation="relu"))
-    model.add(Dense(num_actions, activation="linear"))
+    model.add(Dropout(0.25))
+    model.add(Dense(256, activation="relu"))
+    model.add(Dense(len(ACTIONS), activation="linear"))
 
     return model
 
@@ -62,7 +54,7 @@ model_target = create_q_model()
 
 # In the Deepmind paper they use RMSProp however then Adam optimizer
 # improves training time
-optimizer = keras.optimizers.Adam(learning_rate=0.000002, clipnorm=1.0)
+optimizer = keras.optimizers.Adam(learning_rate=0.000025, clipnorm=1.0)
 
 # Experience replay buffers
 action_history = []
@@ -82,26 +74,26 @@ epsilon_greedy_frames = 1000000.0
 # Note: The Deepmind paper suggests 1000000 however this causes memory issues
 max_memory_length = 100000
 # Train the model after 4 actions
-update_after_actions = 8
+update_after_actions = 4
 # How often to update the target network
-update_target_network = 250
+update_target_network = 10_000
 # Using huber loss for stability
 loss_function = keras.losses.Huber()
 env = Tetris.Tetris()
 total_lines_cleared = 0
-APPROACH = 'DQN'
-TAG = 3
+APPROACH = 'DQN_40_Actions'
+TAG = 4
 with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'w') as f:
     print('Created')
 try:
     while True:  # Run until solved
-        state = env.get_state()
         episode_reward = 0
         episde_lines_cleared = 0
         if episode_count % 10 == 0:
             print("Episode: " + str(episode_count))
             print('Total lines cleared: ' + str(total_lines_cleared))
         for timestep in range(1, max_steps_per_episode):
+            env.step(None)
             state = env.get_state()
             # env.render(); Adding this line would show the attempts
             # of the agent in a pop up window.
@@ -198,12 +190,12 @@ try:
                 del action_history[:1]
                 del done_history[:1]
 
-        if episode_count % update_target_network == 0 and episode_count != 0:
-            # update the the target network with new weights
-            model_target.set_weights(model.get_weights())
-            # Log details
-            template = "running reward: {:.2f} at episode {}, frame count {}"
-            print(template.format(running_reward, episode_count, frame_count))
+            if frame_count % update_target_network == 0:
+                # update the the target network with new weights
+                model_target.set_weights(model.get_weights())
+                # Log details
+                template = "running reward: {:.2f} at episode {}, frame count {}"
+                print(template.format(running_reward, episode_count, frame_count))
 
         # Update running reward to check condition for solving
         with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'a') as f:
@@ -218,7 +210,6 @@ try:
         # if running_reward > 40:  # Condition to consider the task solved
         #     print("Solved at episode {}!".format(episode_count))
         #     break
-except BaseException as e:
-    print(e)
+except:
     model.save('{}/models/_{}'.format(APPROACH, TAG))
     model_target.save('{}/models/target_{}'.format(APPROACH, TAG))
