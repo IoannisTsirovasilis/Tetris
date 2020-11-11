@@ -1,13 +1,14 @@
 import pygame as pg
 import numpy as np
 import sys
-import GraphicsManager
-import GameController
+import Idea.GraphicsManagerIdea as GraphicsManager
+from Idea import GameControllerIdea as GameController
+import time
 
 SPEED_MULTIPLIER = 10000000
 WIDTH = 1186
 HEIGHT = 964
-FPS = 60
+FPS = 200
 INSTANT_DROP_SPEED = 1000 * SPEED_MULTIPLIER
 ACTIONS = {
     'Nothing': 0,
@@ -27,7 +28,7 @@ class Tetris:
         self.gameController = GameController.GameController(FPS)
         self.clock = pg.time.Clock()
         self.previous_score = self.gameController.score
-        self.index = 0
+        self.index = GameController.MAP_BLOCK_FALLING
         self.pf = None
         self.next_piece = None
 
@@ -35,13 +36,13 @@ class Tetris:
         return self.gameController.game_state == GameController.GAME_OVER_STATE
 
     def get_state(self):
-        return GameController.BOARD
+        return GameController.BOARD[2:, :]
 
     def get_reward(self):
         if self.game_over():
             return -1
 
-        reward = (self.gameController.lines - self.gameController.previous_lines) ** 2
+        reward = (self.gameController.lines - self.gameController.previous_lines) ** 2 + 4
         self.gameController.previous_lines = self.gameController.lines
 
         self.previous_score = self.gameController.score
@@ -49,12 +50,13 @@ class Tetris:
         holes = self.gameController.number_of_holes()
         bumpiness = self.gameController.bumpiness()
         height = self.gameController.height()
+        empty_columns = self.gameController.empty_columns()
 
-        reward += -0.51 * height + 0.76 * self.gameController.lines - 0.36 * holes - 0.18 * bumpiness[0]
+        reward += -0.51 * height + 1 * self.gameController.lines - 0.15 * holes - 0.1 * bumpiness[0] - 0.5 * empty_columns
 
         return reward
 
-    def step(self, action):
+    def step(self, action, previous_action):
         reward = 0
         dt = self.clock.tick(self.gameController.fps)
         for event in pg.event.get():
@@ -71,41 +73,52 @@ class Tetris:
             if len(self.gameController.next_pieces) <= 2:
                 self.gameController.create_piece_sequence()
             if not self.gameController.piece_falling:
-                #reward += 1
                 self.gameController.rotated = False
                 self.gameController.piece_falling = True
                 pts = self.gameController.next_pieces[:][0]
                 del self.gameController.next_pieces[0]
                 self.next_piece = self.gameController.next_pieces[:][0]
-                self.index = pts[pts > 0][0]
                 game_over = GameController.spawn_piece(pts)
                 if game_over:
                     self.gameController.game_state = GameController.GAME_OVER_STATE
                 self.pf = pts[:]
             else:
+                if (previous_action != action
+                    and (action == ACTIONS['Left'] or action == ACTIONS['Right'])
+                    and (previous_action == ACTIONS['Left'] or previous_action == ACTIONS['Right'])):
+                    reward -= 0.05
                 #print('Action taken: ' + DEBUG_ACTIONS[action])
                 if action == ACTIONS['Left'] and self.gameController.move_counter >= GameController.H_SPEED and self.gameController.can_h_move:
                     self.gameController.can_h_move = False
                     self.gameController.move_counter = 0
-                    GameController.h_move(-1, self.index)
+                    moved = GameController.h_move(-1, self.index)
+                    if not moved:
+                        reward -= 0.05
                 if action == ACTIONS['Right'] and self.gameController.move_counter >= GameController.H_SPEED and self.gameController.can_h_move:
                     self.gameController.can_h_move = False
                     self.gameController.move_counter = 0
-                    GameController.h_move(1, self.index)
+                    moved = GameController.h_move(1, self.index)
+                    if not moved:
+                        reward -= 0.05
                 if action == ACTIONS['Rotate'] and self.gameController.can_rotate:
                     self.gameController.can_rotate = False
-                    self.gameController.rotated = GameController.r_move(self.pf, self.index, self.gameController.rotated)
+                    rotated = self.gameController.rotated = GameController.r_move(self.pf, self.index, self.gameController.rotated)
+                    if not rotated:
+                        reward -= 0.05
                 if self.gameController.drop_counter >= self.gameController.speed and self.gameController.piece_falling:
                     self.gameController.drop_counter = 0
                     self.gameController.piece_falling = self.gameController.v_move(self.index)
+                    reward += 1
             self.gui.screen.fill(GraphicsManager.BLACK)
             self.gui.draw_game_ui(self.gameController, self.next_piece, np.array_equal(self.next_piece, GameController.I))
         pg.display.update()
         reward += self.get_reward()
         state = self.get_state()
         done = self.game_over()
-        if done:
-            self.gameController.state_initializer()
+        # This should be decided outside environment
+        #if done:
+        #    self.gameController.state_initializer()
+
         # if reward > 0:
         #     print('Reward for this action: ' + str(reward))
         return state, reward, done
@@ -163,8 +176,9 @@ def main():
                     gc.piece_falling = gc.v_move(index)
             gui.screen.fill(GraphicsManager.BLACK)
             gui.draw_game_ui(gc, next_piece, np.array_equal(next_piece, GameController.I))
-        else:
-            gc.state_initializer()
+        # This should be decided outside environment
+        #else:
+        #    gc.state_initializer()
         pg.display.update()
 
 

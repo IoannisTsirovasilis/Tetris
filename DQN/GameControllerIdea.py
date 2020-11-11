@@ -1,27 +1,32 @@
 import random
 import math
 import numpy as np
-import GraphicsManager
+import DQN.GraphicsManagerIdea as GraphicsManager
+from math import floor
 
-I = np.array([[1, 1, 1, 1]])
-J = np.array([[1, 1, 1], [0, 0, 1]])
-L = np.array([[1, 1, 1], [1, 0, 0]])
-O = np.array([[1, 1], [1, 1]])
-S = np.array([[0, 1, 1], [1, 1, 0]])
-T = np.array([[1, 1, 1], [0, 1, 0]])
-Z = np.array([[1, 1, 0], [0, 1, 1]])
-PIECES = [I, J, L, O, S, T, Z]
+
 PIVOT = [2, 5]
 H_SPEED = 80
 LINES_MULTIPLIERS = [40, 100, 300, 1200]
 BOARD_WIDTH = 10
 BOARD_HEIGHT = 22
-STARTING_LEVEL = 1
+STARTING_LEVEL = 9
 PLAYING_STATE = 1
 GAME_OVER_STATE = 0
-MAP_BLOCK = -1
+MAP_BLOCK = 1
 MAP_EMPTY = 0
-BOARD = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=int)
+MAP_BLOCK_FALLING = 1.0000001
+INITIAL_BOARD = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=float)
+BOARD = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=float)
+
+I = np.array([[MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING]])
+J = np.array([[MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING], [MAP_EMPTY, MAP_EMPTY, MAP_BLOCK_FALLING]])
+L = np.array([[MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING], [MAP_BLOCK_FALLING, MAP_EMPTY, MAP_EMPTY]])
+O = np.array([[MAP_BLOCK_FALLING, MAP_BLOCK_FALLING], [MAP_BLOCK_FALLING, MAP_BLOCK_FALLING]])
+S = np.array([[MAP_EMPTY, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING], [MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_EMPTY]])
+T = np.array([[MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING], [MAP_EMPTY, MAP_BLOCK_FALLING, MAP_EMPTY]])
+Z = np.array([[MAP_BLOCK_FALLING, MAP_BLOCK_FALLING, MAP_EMPTY], [MAP_EMPTY, MAP_BLOCK_FALLING, MAP_BLOCK_FALLING]])
+PIECES = [I, J, L, O, S, T, Z]
 
 
 def calculate_speed(level):
@@ -29,11 +34,12 @@ def calculate_speed(level):
 
 
 def get_piece_color(index):
-    return GraphicsManager.PIECES_COLORS[index]
+    return GraphicsManager.PIECES_COLORS[int(floor(index))]
 
 
 def get_piece_coords():
-    r, c = np.where(BOARD > 0)
+    r, c = np.where(BOARD > MAP_BLOCK)
+
     return np.vstack((r, c))
 
 
@@ -43,7 +49,7 @@ def v_collision():
     c = get_piece_coords()
     for j in range(4):
         # if piece is going to overlap another piece below, don't move it
-        if BOARD[c[0][j]+1][c[1][j]] < 0:
+        if BOARD[c[0][j]+1][c[1][j]] == MAP_BLOCK:
             return False
     return True
 
@@ -58,7 +64,7 @@ def h_collision(d):
         if c[1][j] + d < 0 or c[1][j] + d > 9:
             return False
         # if piece is going to overlap a placed piece, don't move it
-        if BOARD[c[0][j]][c[1][j] + d] < 0:
+        if BOARD[c[0][j]][c[1][j] + d] == MAP_BLOCK:
             return False
     # if piece can move, move it
     return True
@@ -71,7 +77,7 @@ def h_move(d, index):
         if h_collision(d):
             c = get_piece_coords()
             for j in range(4):
-                BOARD[c[0][j]][c[1][j]] = 0
+                BOARD[c[0][j]][c[1][j]] = MAP_EMPTY
             # redraw it in its new position, one column right/left
             for j in range(4):
                 BOARD[c[0][j]][c[1][j] + d] = index
@@ -107,14 +113,14 @@ def r_move(ptr, index, r):
                     if i_rot < 0 or i_rot > 21 or j_rot < 0 or j_rot > 9:
                         return False
                     # if after rotation, piece overlaps with another piece, don't rotate
-                    if BOARD[i_rot][j_rot] < 0:
+                    if BOARD[i_rot][j_rot] == MAP_BLOCK:
                         return False
             except IndexError:
                 return False
             for j in range(4):
                 if c[0][j] != PIVOT[0] or c[1][j] != PIVOT[1]: # pivot block doesn't rotate
                     # erase block
-                    BOARD[c[0][j]][c[1][j]] = 0
+                    BOARD[c[0][j]][c[1][j]] = MAP_EMPTY
             for j in range(4):
                 i_rot = -c[1][j] + PIVOT[1] + PIVOT[0]
                 j_rot = c[0][j] - PIVOT[0] + PIVOT[1]
@@ -130,11 +136,11 @@ def r_move(ptr, index, r):
             j_rot = -c[0][j] + PIVOT[0] + PIVOT[1]
             if i_rot < 0 or i_rot > 21 or j_rot < 0 or j_rot > 9:
                 return True
-            if BOARD[i_rot][j_rot] < 0:
+            if BOARD[i_rot][j_rot] == MAP_BLOCK:
                 return True
         for j in range(4):
             if c[0][j] != PIVOT[0] or c[1][j] != PIVOT[1]:
-                BOARD[c[0][j]][c[1][j]] = 0
+                BOARD[c[0][j]][c[1][j]] = MAP_EMPTY
     except IndexError:
         return True
     for j in range(4):
@@ -150,10 +156,10 @@ def spawn_piece(pts):
     reset_pivot()
     for i in range(pts.shape[0]):
         for j in range(pts.shape[1]):
-            if pts[i][j] == 0:
+            if pts[i][j] == MAP_EMPTY:
                 continue
             else:
-                if BOARD[(i+2)][(j+4) - (2 - pts.shape[0])] < 0:
+                if BOARD[(i+2)][(j+4) - (2 - pts.shape[0])] == MAP_BLOCK:
                     game_over = True
                 BOARD[(i+2)][(j+4) - (2 - pts.shape[0])] = pts[i][j]
     return game_over
@@ -166,6 +172,18 @@ def reset_pivot():
 
 def game_over():
     return True
+
+
+def heights_diff():
+    col_heights = []
+
+    for col in zip(*BOARD):
+        i = 0
+        while i < BOARD_HEIGHT and col[i] == MAP_EMPTY:
+            i += 1
+        height = BOARD_HEIGHT - i
+        col_heights.append(height)
+    return col_heights
 
 
 class GameController:
@@ -193,7 +211,7 @@ class GameController:
 
     def state_initializer(self):
         self.game_state = PLAYING_STATE
-        BOARD[BOARD != 0] = 0
+        BOARD[BOARD != MAP_EMPTY] = MAP_EMPTY
         self.level = STARTING_LEVEL
         self.set_speed(self.level)
         self.move_counter = 0
@@ -228,7 +246,7 @@ class GameController:
                 c = get_piece_coords()
                 # erase piece from board
                 for j in range(4):
-                    BOARD[c[0][j]][c[1][j]] = 0
+                    BOARD[c[0][j]][c[1][j]] = MAP_EMPTY
                 # redraw it in its new position, one row lower
                 for j in range(4):
                     BOARD[c[0][j]+1][c[1][j]] = index
@@ -243,15 +261,15 @@ class GameController:
     def update_board(self, index):
         c = get_piece_coords()
         for j in range(4):
-            BOARD[c[0][j]][c[1][j]] = -index
+            BOARD[c[0][j]][c[1][j]] = MAP_BLOCK
         # returns true if every element in a row is non-zero, else false, for each row
-        lines_state = np.all(BOARD, axis=1)
+        lines_state = np.all(BOARD[:, ...] == MAP_BLOCK, axis=1)
         lines_to_erase = 0
         for i in range(lines_state.shape[0]):
             # if line is full of piece blocks
             if lines_state[i]:
                 lines_to_erase += 1
-                BOARD[i] = 0
+                BOARD[i] = MAP_EMPTY
                 for r in reversed(range(i+1)):
                     if r > 0:
                         BOARD[r] = np.copy(BOARD[r-1])
@@ -309,12 +327,14 @@ class GameController:
 
         return total_bumpiness, max_bumpiness
 
+
+
     def height(self):
         '''Sum and maximum height of the board'''
         sum_height = 0
 
         for col in zip(*BOARD):
-            i = 0
+            i = BOARD_HEIGHT - 1
             while i < BOARD_HEIGHT and col[i] == MAP_EMPTY:
                 i += 1
             height = BOARD_HEIGHT - i

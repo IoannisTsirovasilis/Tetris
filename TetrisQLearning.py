@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import GraphicsManager
 import GameController
+import time
 
 SPEED_MULTIPLIER = 10000000
 WIDTH = 1186
@@ -35,7 +36,7 @@ class Tetris:
         return self.gameController.game_state == GameController.GAME_OVER_STATE
 
     def get_state(self):
-        return GameController.BOARD
+        return GameController.BOARD[2:, :]
 
     def get_reward(self):
         if self.game_over():
@@ -49,12 +50,15 @@ class Tetris:
         holes = self.gameController.number_of_holes()
         bumpiness = self.gameController.bumpiness()
         height = self.gameController.height()
+        empty_columns = self.gameController.empty_columns()
 
         reward += -0.51 * height + 0.76 * self.gameController.lines - 0.36 * holes - 0.18 * bumpiness[0]
-
+        reward -= 0.8 * empty_columns
         return reward
 
     def step(self, action):
+        print(GameController.BOARD)
+        time.sleep(0.1)
         reward = 0
         dt = self.clock.tick(self.gameController.fps)
         for event in pg.event.get():
@@ -87,14 +91,20 @@ class Tetris:
                 if action == ACTIONS['Left'] and self.gameController.move_counter >= GameController.H_SPEED and self.gameController.can_h_move:
                     self.gameController.can_h_move = False
                     self.gameController.move_counter = 0
-                    GameController.h_move(-1, self.index)
+                    moved = GameController.h_move(-1, self.index)
+                    if not moved:
+                        reward -= 0.05
                 if action == ACTIONS['Right'] and self.gameController.move_counter >= GameController.H_SPEED and self.gameController.can_h_move:
                     self.gameController.can_h_move = False
                     self.gameController.move_counter = 0
-                    GameController.h_move(1, self.index)
+                    moved = GameController.h_move(1, self.index)
+                    if not moved:
+                        reward -= 0.05
                 if action == ACTIONS['Rotate'] and self.gameController.can_rotate:
                     self.gameController.can_rotate = False
-                    self.gameController.rotated = GameController.r_move(self.pf, self.index, self.gameController.rotated)
+                    rotated = self.gameController.rotated = GameController.r_move(self.pf, self.index, self.gameController.rotated)
+                    if not rotated:
+                        reward -= 0.05
                 if self.gameController.drop_counter >= self.gameController.speed and self.gameController.piece_falling:
                     self.gameController.drop_counter = 0
                     self.gameController.piece_falling = self.gameController.v_move(self.index)

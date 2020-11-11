@@ -2,9 +2,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-import Tetris
-import GameController
-
+from IdeaV2 import GameControllerIdea as GameController, TetrisQLearningIdea as Tetris
+from time import sleep
 
 # Configuration paramaters for the whole setup
 seed = 42
@@ -15,8 +14,8 @@ epsilon_max = 1.0  # Maximum epsilon greedy parameter
 epsilon_interval = (
     epsilon_max - epsilon_min
 )  # Rate at which to reduce chance of random action being taken
-batch_size = 64  # Size of batch taken from replay buffer
-max_steps_per_episode = 10000
+batch_size = 128  # Size of batch taken from replay buffer
+max_steps_per_episode = 1_000_000
 
 num_actions = 4
 
@@ -27,19 +26,24 @@ ACTIONS = {
     'Rotate': 3
 }
 
+print("V2")
+sleep(1)
+
+
 def create_q_model():
     # Network defined by the Deepmind paper
-    inputs = layers.Input(shape=(GameController.BOARD_HEIGHT, GameController.BOARD_WIDTH, 1))
+    inputs = layers.Input(shape=(GameController.BOARD_HEIGHT - 2, GameController.BOARD_WIDTH, 1))
 
     # Convolutions on the frames on the screen
-    layer1 = layers.Conv2D(8, 4, activation="relu")(inputs)
-    layer2 = layers.Conv2D(16, 2, activation="relu")(layer1)
+    layer1 = layers.Conv2D(32, 2, activation="relu")(inputs)
+    layer2 = layers.Conv2D(64, 2, activation="relu")(layer1)
+    layer3 = layers.Conv2D(128, 2, activation="relu")(layer2)
 
-    layer3 = layers.Flatten()(layer2)
+    layer4 = layers.Flatten()(layer3)
 
-    layer4 = layers.Dense(16, activation="relu")(layer3)
-    layer5 = layers.Dense(8, activation="relu")(layer4)
-    action = layers.Dense(num_actions, activation="linear")(layer5)
+    layer5 = layers.Dense(128, activation="relu")(layer4)
+    layer6 = layers.Dense(512, activation="relu")(layer5)
+    action = layers.Dense(num_actions, activation="linear")(layer6)
 
     return keras.Model(inputs=inputs, outputs=action)
 
@@ -55,7 +59,7 @@ model_target = create_q_model()
 
 # In the Deepmind paper they use RMSProp however then Adam optimizer
 # improves training time
-optimizer = keras.optimizers.Adam(learning_rate=0.000002, clipnorm=1.0)
+optimizer = keras.optimizers.Adam(learning_rate=0.00002, clipnorm=1.0)
 
 # Experience replay buffers
 action_history = []
@@ -81,13 +85,15 @@ update_target_network = 10000
 # Using huber loss for stability
 loss_function = keras.losses.Huber()
 env = Tetris.Tetris()
-UPDATE_AFTER_EPISODES = 1000
-
+UPDATE_AFTER_EPISODES = 250
+previous_action = 0
+total_lines_cleared = 0
 while True:  # Run until solved
     state = env.get_state()
     episode_reward = 0
     if episode_count % 10 == 0:
         print("Episode: " + str(episode_count))
+        print('Total lines cleared: ' + str(total_lines_cleared))
     done = False
     if episode_count % UPDATE_AFTER_EPISODES == 0:
         flag = False
@@ -114,7 +120,7 @@ while True:  # Run until solved
         epsilon = max(epsilon, epsilon_min)
 
         # Apply the sampled action in our environment
-        state_next, reward, done = env.step(action)
+        state_next, reward, done = env.step(action, previous_action)
         state_next = np.array(state_next)
 
         episode_reward += reward
@@ -127,8 +133,10 @@ while True:  # Run until solved
         rewards_history.append(reward)
         state = state_next
 
+        previous_action = action_history[-1]
+
         # Update every fourth frame and once batch size is over 32
-        if episode_count % UPDATE_AFTER_EPISODES == 0 and len(done_history) > batch_size:
+        if episode_count % UPDATE_AFTER_EPISODES == 0 and episode_count != 0 and len(done_history) > batch_size:
 
             # Get indices of samples for replay buffers
             indices = np.random.choice(range(len(done_history)), size=batch_size)
@@ -169,7 +177,7 @@ while True:  # Run until solved
             grads = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
-        if episode_count % UPDATE_AFTER_EPISODES == 0:
+        if episode_count % UPDATE_AFTER_EPISODES == 0 and episode_count != 0:
             # update the the target network with new weights
             model_target.set_weights(model.get_weights())
             # Log details
@@ -186,9 +194,8 @@ while True:  # Run until solved
             del action_history[:1]
             del done_history[:1]
 
-        if done:
-            break
-
+    total_lines_cleared += env.gameController.lines
+    env.gameController.state_initializer()
     # Update running reward to check condition for solving
     episode_reward_history.append(episode_reward)
     if len(episode_reward_history) > 10000:
