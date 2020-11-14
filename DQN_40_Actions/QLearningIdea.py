@@ -34,12 +34,10 @@ def create_q_model():
     model.add(Input(shape=INPUT_SHAPE, dtype="float32"))
     model.add(Conv2D(32, 5, strides=(1, 1), activation="relu"))
     model.add(Conv2D(64, 3, strides=(1, 1), activation="relu"))
-    model.add(Conv2D(128, 3, strides=(1, 1), activation="relu"))
+    model.add(Conv2D(64, 3, strides=(1, 1), activation="relu"))
     model.add(Flatten())
     model.add(Dense(512, activation="relu"))
-    model.add(Dropout(0.25))
-    model.add(Dense(256, activation="relu"))
-    model.add(Dense(len(ACTIONS), activation="linear"))
+    model.add(Dense(len(ACTIONS), activation="softmax"))
 
     return model
 
@@ -81,8 +79,9 @@ update_target_network = 10_000
 loss_function = keras.losses.Huber()
 env = Tetris.Tetris()
 total_lines_cleared = 0
+action_count = 0
 APPROACH = 'DQN_40_Actions'
-TAG = 4
+TAG = 3
 with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'w') as f:
     print('Created')
 try:
@@ -100,7 +99,7 @@ try:
             frame_count += 1
 
             # Use epsilon-greedy for exploration
-            if frame_count < epsilon_random_frames or epsilon > np.random.rand(1)[0]:
+            if action_count < epsilon_random_frames or epsilon > np.random.rand(1)[0]:
                 # Take random action
                 action = np.random.choice(num_actions)
             else:
@@ -128,6 +127,7 @@ try:
                 env.gameController.state_initializer()
                 break
 
+            action_count += 1
             state_next = np.array(state_next)
 
             episode_reward += reward
@@ -141,7 +141,7 @@ try:
             state = state_next
 
             # Update every fourth frame and once batch size is over 32
-            if frame_count % update_after_actions == 0 and len(done_history) > batch_size:
+            if action_count % update_after_actions == 0 and len(done_history) > batch_size:
 
                 # Get indices of samples for replay buffers
                 indices = np.random.choice(range(len(done_history)), size=batch_size)
@@ -190,7 +190,7 @@ try:
                 del action_history[:1]
                 del done_history[:1]
 
-            if frame_count % update_target_network == 0:
+            if action_count % update_target_network == 0:
                 # update the the target network with new weights
                 model_target.set_weights(model.get_weights())
                 # Log details

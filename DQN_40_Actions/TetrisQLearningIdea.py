@@ -5,7 +5,7 @@ import DQN_40_Actions.GraphicsManagerIdea as GraphicsManager
 from DQN_40_Actions import GameControllerIdea as GameController
 import time
 
-SPEED_MULTIPLIER = 1
+SPEED_MULTIPLIER = 1000000
 WIDTH = 1186
 HEIGHT = 964
 FPS = 60
@@ -41,13 +41,13 @@ class Tetris:
         reward = (self.gameController.lines - self.gameController.previous_lines) ** 2
         self.gameController.previous_lines = self.gameController.lines
 
-        # holes = self.gameController.number_of_holes()
-        # bumpiness = self.gameController.bumpiness()
-        # height = self.gameController.height()
-        # #empty_columns = self.gameController.empty_columns()
-        #
-        # reward += -0.51 * height + 0.76 * self.gameController.lines - 0.36 * holes - 0.18 * bumpiness[
-        #     0]
+        holes = self.gameController.number_of_holes()
+        bumpiness = self.gameController.bumpiness()
+        height = self.gameController.height()
+        #empty_columns = self.gameController.empty_columns()
+
+        reward += -0.51 * height + 0.76 * self.gameController.lines - 0.36 * holes - 0.18 * bumpiness[
+            0]
 
         return reward
 
@@ -84,6 +84,7 @@ class Tetris:
                             direction = int(transform / abs(transform))
                             GameController.h_move(direction, self.index)
                             self.update_screen()
+                    #self.update_screen()
                     return self.step(None)
 
                 if self.gameController.piece_falling:
