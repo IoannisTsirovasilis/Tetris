@@ -20,12 +20,12 @@ epsilon_interval = (
     epsilon_max - epsilon_min
 )  # Rate at which to reduce chance of random action being taken
 
-epsilon_stop_episode = 500
+epsilon_stop_episode = 1500
 epsilon_decay = (epsilon - epsilon_min) / epsilon_stop_episode
 log_every = 50
 batch_size = 512
 epochs = 1
-max_steps_per_episode = 10000
+max_steps_per_episode = 1_000_000
 mem_size = 20_000
 memory = deque(maxlen=mem_size)
 num_actions = 40
@@ -54,7 +54,7 @@ def get_best_state(states):
     max_value = None
     best_state = None
 
-    if action_count < epsilon_random_frames or epsilon > np.random.rand(1)[0]:
+    if epsilon >= np.random.rand(1)[0]:
         # Take random action
         return random.choice(list(states))
     else:
@@ -124,7 +124,7 @@ frame_count = 0
 # Number of frames to take random action and observe output
 epsilon_random_frames = 50000
 # Number of frames for exploration
-epsilon_greedy_frames = 100000.0
+epsilon_greedy_frames = 100_000.0
 # Maximum replay length
 # Note: The Deepmind paper suggests 1000000 however this causes memory issues
 max_memory_length = 10_000
@@ -138,7 +138,7 @@ env = Tetris.Tetris()
 total_lines_cleared = 0
 action_count = 0
 APPROACH = 'nlinker'
-TAG = 1
+TAG = 2
 update_after_episodes = 1
 with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'w') as f:
     print('Created')
@@ -155,14 +155,6 @@ try:
 
             possible_next_states = env.get_next_states()
             best_state = get_best_state(possible_next_states.values())
-
-            # env.render(); Adding this line would show the attempts
-            # of the agent in a pop up window.
-            frame_count += 1
-
-            # Decay probability of taking random action
-            epsilon -= epsilon_interval / epsilon_greedy_frames
-            epsilon = max(epsilon, epsilon_min)
 
             best_action = None
             for action, state in possible_next_states.items():
@@ -208,7 +200,7 @@ try:
         running_reward = np.mean(episode_reward_history)
 
         episode_count += 1
-except SystemError:
+except:
     model.save('{}/models/_{}'.format(APPROACH, TAG))
 
 
