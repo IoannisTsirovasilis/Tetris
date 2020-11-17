@@ -1,1 +1,1 @@
-from nlinker import QLearningIdea
+from nlinker import QLearning

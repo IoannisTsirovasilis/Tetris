@@ -172,6 +172,8 @@ try:
                 with tf.GradientTape() as tape:
                     # Train the model on the states and updated Q-values
                     q_values = model(state_sample)
+                    print(q_values)
+                    exit()
 
                     # Apply the masks to the Q-values to get the Q-value for action taken
                     q_action = tf.reduce_sum(tf.multiply(q_values, masks), axis=1)

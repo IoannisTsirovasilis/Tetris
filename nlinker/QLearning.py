@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Dropout, Flatten, Input
-from nlinker import GameControllerIdea as GameController, TetrisQLearningIdea as Tetris
+from nlinker import GameController as GameController, TetrisQLearning as Tetris
 from time import sleep
 import random
 from statistics import mean
@@ -138,13 +138,24 @@ env = Tetris.Tetris()
 total_lines_cleared = 0
 action_count = 0
 APPROACH = 'nlinker'
-TAG = 2
+TAG = 1
 update_after_episodes = 1
+
+singles = []
+doubles = []
+triples = []
+tetrises = []
+
 with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'w') as f:
     print('Created')
+    f.write('Episode,Single,Double,Triple,Tetris,Total,Score\n')
 try:
     while True:  # Run until solved
         episode_reward = 0
+        single = 0
+        double = 0
+        triple = 0
+        tetris = 0
         episode_lines_cleared = 0
         if episode_count % 10 == 0:
             print("Episode: " + str(episode_count))
@@ -152,7 +163,7 @@ try:
         for timestep in range(1, max_steps_per_episode):
             env.step(None)
             current_state = env.get_state(False)
-
+            print('Current State: ', current_state)
             possible_next_states = env.get_next_states()
             best_state = get_best_state(possible_next_states.values())
 
@@ -161,6 +172,14 @@ try:
                 if state == best_state:
                     best_action = action
                     break
+            if best_state[0] == 4:
+                tetris += 1
+            elif best_state[0] == 3:
+                triple += 1
+            elif best_state[0] == 2:
+                double += 1
+            elif best_state[0] == 1:
+                single += 1
 
             reward, done = env.step(best_action)
 
@@ -171,7 +190,7 @@ try:
             add_to_memory(current_state, possible_next_states[best_action], reward, done)
 
             current_state = possible_next_states[best_action]
-
+            print('Best State: ', current_state)
             if done:
                 episode_lines_cleared = env.gameController.lines
                 total_lines_cleared += episode_lines_cleared
@@ -179,7 +198,10 @@ try:
                 break
 
         episode_reward_history.append(episode_reward)
-
+        singles.append(single)
+        doubles.append(double)
+        triples.append(triple)
+        tetrises.append(tetris)
         # Update every fourth frame and once batch size is over 32
         if episode_count % update_after_episodes == 0:
             train(batch_size, epochs)
@@ -192,13 +214,18 @@ try:
             avg_score = mean(episode_reward_history[-log_every:])
             min_score = min(episode_reward_history[-log_every:])
             max_score = max(episode_reward_history[-log_every:])
+            avg_singles = mean(singles[-log_every:])
+            avg_doubles = mean(doubles[-log_every:])
+            avg_triples = mean(triples[-log_every:])
+            avg_tetrises = mean(tetrises[-log_every:])
+            avg_total = mean(singles[-log_every:] + 2 * doubles[-log_every:]
+                             + 3 * triples[-log_every:] + 4 * tetrises[-log_every:])
 
-        # Update running reward to check condition for solving
-        with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'a') as f:
-            f.write('{},{}\n'.format(episode_count, episode_lines_cleared))
-
-        running_reward = np.mean(episode_reward_history)
-
+            # Update running reward to check condition for solving
+            with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'a') as f:
+                f.write('{},{},{},{},{},{},{}\n'.format(episode_count, avg_singles,
+                                                        avg_doubles, avg_triples,
+                                                        avg_tetrises, avg_total, avg_score))
         episode_count += 1
 except:
     model.save('{}/models/_{}'.format(APPROACH, TAG))

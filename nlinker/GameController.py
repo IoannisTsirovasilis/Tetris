@@ -1,7 +1,7 @@
 import random
 import math
 import numpy as np
-import nlinker.GraphicsManagerIdea as GraphicsManager
+import nlinker.GraphicsManager as GraphicsManager
 from math import floor
 from time import sleep
 

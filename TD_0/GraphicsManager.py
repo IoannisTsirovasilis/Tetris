@@ -1,5 +1,5 @@
 import pygame as pg
-import nlinker.GameControllerIdea as GameController
+import TD_0.GameController as GameController
 
 FONT = "Comic Sans Ms"
 BLACK = [0, 0, 0]

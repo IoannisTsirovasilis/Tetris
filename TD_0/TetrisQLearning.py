@@ -1,8 +1,8 @@
 import pygame as pg
 import numpy as np
 import sys
-import nlinker.GraphicsManagerIdea as GraphicsManager
-from nlinker import GameControllerIdea as GameController
+import TD_0.GraphicsManager as GraphicsManager
+from TD_0 import GameController as GameController
 import time
 
 SPEED_MULTIPLIER = 1000000
@@ -35,7 +35,7 @@ PIECE_ACTIONS = {
     },
     4: { # I
         0: [-3, 3],
-        1: [-4, 5]
+        1: [-5, 4]
     },
     5: { # L
         0: [-4, 3],
@@ -138,7 +138,6 @@ class Tetris:
                                                                                    GameController.PIVOT, False)
                     self.update_screen()
                     if not self.gameController.piece_falling:
-                        reward += 1
                         reward += self.get_reward()
                     else:
                         return self.step(None)
