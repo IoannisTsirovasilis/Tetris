@@ -1,5 +1,5 @@
 import pygame as pg
-import GameController
+import GameController as GameController
 
 FONT = "Comic Sans Ms"
 BLACK = [0, 0, 0]
@@ -12,7 +12,7 @@ CYAN = [0, 255, 255]
 RED = [255, 0, 0]
 GREEN = [0, 153, 51]
 WHITE = [255, 255, 255]
-PIECES_COLORS = [GREY, CYAN, BLUE, ORANGE, YELLOW, GREEN, PURPLE, WHITE]
+PIECES_COLORS = [GREY, CYAN, BLUE, ORANGE, YELLOW, GREEN, PURPLE, GREY]
 
 
 class GraphicsManager:

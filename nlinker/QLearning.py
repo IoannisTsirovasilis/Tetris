@@ -163,7 +163,6 @@ try:
         for timestep in range(1, max_steps_per_episode):
             env.step(None)
             current_state = env.get_state(False)
-            print('Current State: ', current_state)
             possible_next_states = env.get_next_states()
             best_state = get_best_state(possible_next_states.values())
 
@@ -190,7 +189,7 @@ try:
             add_to_memory(current_state, possible_next_states[best_action], reward, done)
 
             current_state = possible_next_states[best_action]
-            print('Best State: ', current_state)
+
             if done:
                 episode_lines_cleared = env.gameController.lines
                 total_lines_cleared += episode_lines_cleared
@@ -218,8 +217,8 @@ try:
             avg_doubles = mean(doubles[-log_every:])
             avg_triples = mean(triples[-log_every:])
             avg_tetrises = mean(tetrises[-log_every:])
-            avg_total = mean(singles[-log_every:] + 2 * doubles[-log_every:]
-                             + 3 * triples[-log_every:] + 4 * tetrises[-log_every:])
+            avg_total = mean(singles[-log_every:]) + 2 * mean(doubles[-log_every:]) \
+                        + 3 * mean(triples[-log_every:]) + 4 * mean(tetrises[-log_every:])
 
             # Update running reward to check condition for solving
             with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'a') as f:

@@ -1,8 +1,8 @@
 import pygame as pg
 import numpy as np
 import sys
-import nlinker.GraphicsManager as GraphicsManager
-from nlinker import GameController as GameController
+import GraphicsManager as GraphicsManager
+import GameController as GameController
 import time
 
 SPEED_MULTIPLIER = 1000000
@@ -50,6 +50,11 @@ PIECE_ACTIONS = {
         3: [-5, 3]
     }
 }
+
+
+def get_simulation_reward(state):
+    reward = 1 + state[0] ** 2 * GameController.BOARD_WIDTH
+    return reward
 
 
 class Tetris:

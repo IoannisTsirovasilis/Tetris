@@ -1,14 +1,13 @@
-from collections import deque
-
 import numpy as np
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Dropout, Flatten, Input
-from TD_0 import GameController as GameController, TetrisQLearning as Tetris
+from tensorflow.keras.layers import Dense, Input
+import GameController as GameController
+import TetrisAI as Tetris
 from time import sleep
 import random
 from statistics import mean
 import sys
+from collections import deque
 
 # Configuration paramaters for the whole setup
 seed = 42
@@ -20,14 +19,15 @@ epsilon_stop_steps = 10_000
 epsilon_decay = (epsilon - epsilon_min) / epsilon_stop_steps
 log_every = 50
 max_steps_per_episode = 1_000_000
-mem_size = 10
-memory = deque(maxlen=mem_size)
 ACTIONS = [(transform, rotation) for transform in range(0 - 5, GameController.BOARD_WIDTH - 5) for rotation in range(4)]
 
 INPUT_SHAPE = 4
 
-print("SARSA")
+print("RLearning")
 sleep(1)
+
+# R_
+avg_reward = [0]
 
 
 def create_q_model():
@@ -41,12 +41,12 @@ def create_q_model():
     return model
 
 
-def get_best_state(states):
+def get_best_state(states, updating):
     '''Returns the best state for a given collection of states'''
     max_value = None
     best_state = None
 
-    if epsilon >= np.random.rand(1)[0]:
+    if epsilon >= np.random.rand(1)[0] and not updating:
         # Take random action
         return random.choice(list(states))
     else:
@@ -59,26 +59,27 @@ def get_best_state(states):
     return best_state
 
 
+alpha = 0.01
+beta = 0.01
+
+
 def predict_value(state):
     """Predicts the score for a certain state"""
     return model.predict(state)
 
 
-def add_to_memory(current_state, next_state, reward, done):
-    """Adds a play to the replay memory buffer"""
-    memory.append((current_state, next_state, reward, done))
-
-
-def train(state, next_state, reward, done):
+def train(state, next_state, reward, avg_reward):
     """Trains the agent"""
 
     qs = model.predict(np.reshape(state, [1, INPUT_SHAPE]))[0]
     next_qs = model.predict(np.reshape(next_state, [1, INPUT_SHAPE]))[0]
 
-    if not done:
-        new_q = reward + gamma * next_qs - qs
-    else:
-        new_q = reward
+    delta = reward - avg_reward[0] + next_qs - qs
+
+    new_q = qs + alpha * delta
+
+    if new_q == next_qs:
+        avg_reward[0] += beta * delta
 
     x = [state]
     y = [new_q]
@@ -98,7 +99,6 @@ episode_count = 1
 env = Tetris.Tetris()
 total_lines_cleared = 0
 action_count = 0
-APPROACH = 'TD_0'
 TAG = 1
 
 singles = []
@@ -106,11 +106,12 @@ doubles = []
 triples = []
 tetrises = []
 
-with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'w') as f:
+with open('reports/report_{}.csv'.format(TAG), 'w') as f:
     print('Created')
     f.write('Episode,Single,Double,Triple,Tetris,Total,Score\n')
 try:
     while True:  # Run until solved
+        done = False
         episode_reward = 0
         single = 0
         double = 0
@@ -123,13 +124,13 @@ try:
         env.step(None)
         current_state = env.get_state(False)
         possible_next_states = env.get_next_states()
-        best_state = get_best_state(possible_next_states.values())
-        best_action = None
-        for action, state in possible_next_states.items():
-            if state == best_state:
-                best_action = action
-                break
-        for timestep in range(1, max_steps_per_episode):
+        while not done:
+            best_state = get_best_state(possible_next_states.values(), False)
+            best_action = None
+            for action, state in possible_next_states.items():
+                if state == best_state:
+                    best_action = action
+                    break
 
             if best_state[0] == 4:
                 tetris += 1
@@ -146,19 +147,12 @@ try:
 
             episode_reward += reward
 
-            add_to_memory(current_state, possible_next_states[best_action], reward, done)
-
             env.step(None)
             next_state = env.get_state(False)
             possible_next_states = env.get_next_states()
-            best_state = get_best_state(possible_next_states.values())
-            best_action = None
-            for action, state in possible_next_states.items():
-                if state == best_state:
-                    best_action = action
-                    break
+            best_state = get_best_state(possible_next_states.values(), True)
 
-            train(current_state, next_state, reward, done)
+            train(current_state, next_state, reward, avg_reward)
             current_state = next_state
             if epsilon > epsilon_min:
                 epsilon -= epsilon_decay
@@ -175,7 +169,6 @@ try:
         tetrises.append(tetris)
         # Update every fourth frame and once batch size is over 32
 
-
         # Logs
         if log_every and episode_count and episode_count % log_every == 0:
             avg_score = mean(episode_reward_history[-log_every:])
@@ -189,12 +182,10 @@ try:
                         + 3 * mean(triples[-log_every:]) + 4 * mean(tetrises[-log_every:])
 
             # Update running reward to check condition for solving
-            with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'a') as f:
+            with open('reports/report_{}.csv'.format(TAG), 'a') as f:
                 f.write('{},{},{},{},{},{},{}\n'.format(episode_count, avg_singles,
                                                         avg_doubles, avg_triples,
                                                         avg_tetrises, avg_total, avg_score))
         episode_count += 1
 except SystemExit:
-    model.save('{}/models/_{}'.format(APPROACH, TAG))
-
-
+    model.save('models/_{}'.format(TAG))
