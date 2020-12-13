@@ -150,17 +150,17 @@ def main():
                 if pg.key.get_pressed()[pg.K_LEFT] and gc.move_counter >= GameController.H_SPEED and gc.can_h_move:
                     gc.can_h_move = False
                     gc.move_counter = 0
-                    GameController.h_move(-1, index)
+                    GameController.h_move(-1, index, GameController.BOARD, GameController.PIVOT, False)
                 if pg.key.get_pressed()[pg.K_RIGHT] and gc.move_counter >= GameController.H_SPEED and gc.can_h_move:
                     gc.can_h_move = False
                     gc.move_counter = 0
-                    GameController.h_move(1, index)
+                    GameController.h_move(1, index, GameController.BOARD, GameController.PIVOT, False)
                 if pg.key.get_pressed()[pg.K_UP] and gc.can_rotate:
                     gc.can_rotate = False
-                    gc.rotated = GameController.r_move(pf, index, gc.rotated)
+                    gc.rotated = GameController.r_move(pf, index, gc.rotated, GameController.BOARD, GameController.PIVOT, False)
                 if gc.drop_counter >= gc.speed and gc.piece_falling:
                     gc.drop_counter = 0
-                    gc.piece_falling = gc.v_move(index)
+                    gc.piece_falling = gc.v_move(index, GameController.BOARD, GameController.PIVOT, False)
             gui.screen.fill(GraphicsManager.BLACK)
             gui.draw_game_ui(gc, next_piece, np.array_equal(next_piece, GameController.I))
         else:

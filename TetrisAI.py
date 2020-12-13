@@ -52,18 +52,17 @@ PIECE_ACTIONS = {
 }
 
 
-def get_simulation_reward(state):
-    reward = 1 + state[0] ** 2 * GameController.BOARD_WIDTH
-    return reward
+def get_simulate_reward(state):
+    return 1 + state[0] ** 2 * GameController.BOARD_WIDTH
 
 
 class Tetris:
     def __init__(self):
         pg.init()
         pg.font.init()
-        self.gui = GraphicsManager.GraphicsManager(WIDTH, HEIGHT)
+        #self.gui = GraphicsManager.GraphicsManager(WIDTH, HEIGHT)
         self.gameController = GameController.GameController(FPS)
-        self.clock = pg.time.Clock()
+        #self.clock = pg.time.Clock()
         self.previous_score = self.gameController.score
         self.index = GameController.MAP_BLOCK_FALLING
         self.pf = None
@@ -101,10 +100,10 @@ class Tetris:
     def step(self, action):
         reward = 0
         state = None
-        dt = self.clock.tick(self.gameController.fps)
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                sys.exit()
+        #dt = self.clock.tick(self.gameController.fps)
+        # for event in pg.event.get():
+        #     if event.type == pg.QUIT:
+        #         sys.exit()
         if self.gameController.game_state == GameController.PLAYING_STATE:
             if len(self.gameController.next_pieces) <= 2:
                 self.gameController.create_piece_sequence()
@@ -128,24 +127,21 @@ class Tetris:
                                                                                 GameController.BOARD,
                                                                                 GameController.PIVOT,
                                                                                 False)
-                            self.update_screen()
+
                     if transform != 0:
                         for t in range(abs(transform)):
                             direction = int(transform / abs(transform))
                             GameController.h_move(direction, self.index, GameController.BOARD,
                                                   GameController.PIVOT, False)
-                            self.update_screen()
-                    #self.update_screen()
+
                     return self.step(None)
 
                 if self.gameController.piece_falling:
-                    self.gameController.piece_falling = self.gameController.v_move(self.index, GameController.BOARD,
-                                                                                   GameController.PIVOT, False)
-                    self.update_screen()
-                    if not self.gameController.piece_falling:
-                        reward += self.get_reward()
-                    else:
-                        return self.step(None)
+                    while self.gameController.piece_falling:
+                        self.gameController.piece_falling = self.gameController.v_move(self.index, GameController.BOARD,
+                                                                                       GameController.PIVOT, False)
+                    #self.update_screen()
+                    reward += self.get_reward()
         done = self.game_over()
 
         if done:
@@ -156,6 +152,7 @@ class Tetris:
     def get_next_states(self):
         '''Get all possible next states'''
         states = {}
+        rewards = {}
         piece = self.gameController.current_piece
         piece_id = GameController.get_piece_id(piece)
         if piece_id == 0:
@@ -175,35 +172,110 @@ class Tetris:
                 action[0] = x
                 action[1] = rotation
 
-                states[(action[0], action[1])] = self.simulate_step(action, True)
+                states[(action[0], action[1])], rewards[(action[0], action[1])] = self.simulate_step(action, None)
 
         return states
 
-    def simulate_step(self, action, piece_falling):
-        if action is not None:
-            GameController.copy_env_to_simulation()
-            rotation = action[1]
-            transform = action[0]
-            if rotation != 0:
-                for r in range(rotation):
-                    GameController.r_move(self.pf, self.index, False, GameController.SIMULATE_BOARD,
-                                          GameController.SIMULATE_PIVOT, True)
-            if transform != 0:
-                for t in range(abs(transform)):
-                    direction = int(transform / abs(transform))
-                    GameController.h_move(direction, self.index, GameController.SIMULATE_BOARD,
-                                          GameController.SIMULATE_PIVOT, True)
-            return self.simulate_step(None, piece_falling)
+    def get_next_states_next_rewards(self, next_piece):
+        '''Get all possible next states'''
+        states = {}
+        rewards = {}
+        piece = self.gameController.current_piece
+        piece_id = GameController.get_piece_id(piece)
+        if piece_id == 0:
+            rotations = [0]
+        elif piece_id in [1, 2, 4]:
+            rotations = [0, 1]
+        else:
+            rotations = [0, 1, 2, 3]
+
+        action = [0, 0]
+        # For all rotations
+        for rotation in rotations:
+            actions = PIECE_ACTIONS[piece_id][rotation]
+
+            # For all positions
+            for x in range(actions[0], actions[1] + 1):
+                action[0] = x
+                action[1] = rotation
+
+                states[(action[0], action[1])], rewards[(action[0], action[1])] = self.simulate_step(action, next_piece)
+
+        return states, rewards
+
+    def simulate_step(self, action, next_piece):
+        GameController.copy_env_to_simulation()
+        rotation = action[1]
+        transform = action[0]
+        if rotation != 0:
+            for r in range(rotation):
+                GameController.r_move(self.pf, self.index, False, GameController.SIMULATE_BOARD,
+                                      GameController.SIMULATE_PIVOT, True)
+        if transform != 0:
+            for t in range(abs(transform)):
+                direction = int(transform / abs(transform))
+                GameController.h_move(direction, self.index, GameController.SIMULATE_BOARD,
+                                      GameController.SIMULATE_PIVOT, True)
 
         piece_falling = self.gameController.v_move(self.index, GameController.SIMULATE_BOARD,
                                                    GameController.SIMULATE_PIVOT, True)
 
-        if not piece_falling:
-            state = self.get_state(True)
-        else:
-            return self.simulate_step(None, piece_falling)
+        while piece_falling:
+            piece_falling = self.gameController.v_move(self.index, GameController.SIMULATE_BOARD,
+                                                       GameController.SIMULATE_PIVOT, True)
 
-        return state
+        state = self.get_state(True)
+        rewards = []
+        if next_piece is not None:
+            piece_id = GameController.get_piece_id(next_piece)
+            if piece_id == 0:
+                rotations = [0]
+            elif piece_id in [1, 2, 4]:
+                rotations = [0, 1]
+            else:
+                rotations = [0, 1, 2, 3]
+
+            action = [0, 0]
+            # For all rotations
+            temp = np.copy(GameController.SIMULATE_BOARD)
+            for rotation in rotations:
+                actions = PIECE_ACTIONS[piece_id][rotation]
+
+                # For all positions
+
+                for transform in range(actions[0], actions[1] + 1):
+                    GameController.SIMULATE_BOARD = np.copy(temp)
+                    GameController.SIMULATE_PIVOT[0] = 2
+                    GameController.SIMULATE_PIVOT[1] = 5
+                    GameController.spawn_piece_simulate(next_piece)
+
+                    if rotation != 0:
+                        for r in range(rotation):
+                            GameController.r_move(next_piece[:], self.index, False, GameController.SIMULATE_BOARD,
+                                                  GameController.SIMULATE_PIVOT, True)
+                    if transform != 0:
+                        for t in range(abs(transform)):
+                            direction = int(transform / abs(transform))
+                            GameController.h_move(direction, self.index, GameController.SIMULATE_BOARD,
+                                                  GameController.SIMULATE_PIVOT, True)
+
+                    piece_falling = self.gameController.v_move(self.index, GameController.SIMULATE_BOARD,
+                                                               GameController.SIMULATE_PIVOT, True)
+
+                    while piece_falling:
+                        piece_falling = self.gameController.v_move(self.index, GameController.SIMULATE_BOARD,
+                                                                   GameController.SIMULATE_PIVOT, True)
+
+                    next_state = self.get_state(True)
+                    rewards.append(get_simulate_reward(next_state))
+
+            reward = get_simulate_reward(state) + sum(rewards) / float(len(rewards))
+
+            return state, reward
+        else:
+            return state, get_simulate_reward(state)
+
+
 
     def update_screen(self):
         self.gui.screen.fill(GraphicsManager.BLACK)

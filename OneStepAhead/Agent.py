@@ -1,10 +1,10 @@
 from collections import deque
 
 import numpy as np
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Dropout, Flatten, Input
-from nlinker import GameController as GameController, TetrisQLearning as Tetris
+from tensorflow.keras.layers import Dense, Input
+import GameController as GameController
+import TetrisAI as Tetris
 from time import sleep
 import random
 from statistics import mean
@@ -25,16 +25,14 @@ epsilon_decay = (epsilon - epsilon_min) / epsilon_stop_episode
 log_every = 50
 batch_size = 512
 epochs = 1
-max_steps_per_episode = 1_000_000
 mem_size = 20_000
 memory = deque(maxlen=mem_size)
-num_actions = 40
 replay_start_size = 2000
 ACTIONS = [(transform, rotation) for transform in range(0 - 5, GameController.BOARD_WIDTH - 5) for rotation in range(4)]
 
 INPUT_SHAPE = 4
 
-print("nlinker")
+print("MemoryBased")
 sleep(1)
 
 
@@ -43,7 +41,8 @@ def create_q_model():
     model = keras.models.Sequential()
     model.add(Input(shape=INPUT_SHAPE, dtype="float32"))
     model.add(Dense(32, activation="relu"))
-    model.add(Dense(32, activation="relu"))
+    model.add(Dense(64, activation="relu"))
+    model.add(Dense(128, activation="relu"))
     model.add(Dense(1, activation="linear"))
     model.compile(loss='mse', optimizer='adam')
     return model
@@ -137,7 +136,6 @@ loss_function = keras.losses.Huber()
 env = Tetris.Tetris()
 total_lines_cleared = 0
 action_count = 0
-APPROACH = 'nlinker'
 TAG = 1
 update_after_episodes = 1
 
@@ -146,11 +144,12 @@ doubles = []
 triples = []
 tetrises = []
 
-with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'w') as f:
+with open('reports/report_{}.csv'.format(TAG), 'w') as f:
     print('Created')
     f.write('Episode,Single,Double,Triple,Tetris,Total,Score\n')
 try:
     while True:  # Run until solved
+        done = False
         episode_reward = 0
         single = 0
         double = 0
@@ -160,7 +159,7 @@ try:
         if episode_count % 10 == 0:
             print("Episode: " + str(episode_count))
             print('Total lines cleared: ' + str(total_lines_cleared))
-        for timestep in range(1, max_steps_per_episode):
+        while not done:
             env.step(None)
             current_state = env.get_state(False)
             possible_next_states = env.get_next_states()
@@ -221,12 +220,12 @@ try:
                         + 3 * mean(triples[-log_every:]) + 4 * mean(tetrises[-log_every:])
 
             # Update running reward to check condition for solving
-            with open('{}/reports/report_{}.csv'.format(APPROACH, TAG), 'a') as f:
+            with open('reports/report_{}.csv'.format(TAG), 'a') as f:
                 f.write('{},{},{},{},{},{},{}\n'.format(episode_count, avg_singles,
                                                         avg_doubles, avg_triples,
                                                         avg_tetrises, avg_total, avg_score))
         episode_count += 1
-except:
-    model.save('{}/models/_{}'.format(APPROACH, TAG))
+except SystemExit:
+    model.save('models/_{}'.format(TAG))
 
 

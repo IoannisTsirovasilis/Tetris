@@ -1,10 +1,10 @@
 from collections import deque
 
 import numpy as np
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Dropout, Flatten, Input
-from MemoryBased import GameController as GameController, TetrisQLearning as Tetris
+from tensorflow.keras.layers import Dense, Input
+import GameController as GameController
+import TetrisAI as Tetris
 from time import sleep
 import random
 from statistics import mean
@@ -15,6 +15,11 @@ seed = 42
 gamma = 0.95  # Discount factor for past rewards
 epsilon = 1.0  # Epsilon greedy parameter
 epsilon_min = 0  # Minimum epsilon greedy parameter
+epsilon_max = 1.0  # Maximum epsilon greedy parameter
+epsilon_interval = (
+    epsilon_max - epsilon_min
+)  # Rate at which to reduce chance of random action being taken
+
 epsilon_stop_episode = 1500
 epsilon_decay = (epsilon - epsilon_min) / epsilon_stop_episode
 log_every = 50
@@ -27,7 +32,7 @@ ACTIONS = [(transform, rotation) for transform in range(0 - 5, GameController.BO
 
 INPUT_SHAPE = 4
 
-print("QlearningPerEpisode")
+print("MemoryBased")
 sleep(1)
 
 
@@ -80,8 +85,6 @@ def train(batch_size=32, epochs=3):
 
         # Get the expected score for the next states, in batch (better performance)
         next_states = np.array([x[1] for x in batch])
-        states = np.array([x[0] for x in batch])
-        qs = [x[0] for x in model.predict(states)]
         next_qs = [x[0] for x in model.predict(next_states)]
 
         x = []
@@ -91,7 +94,7 @@ def train(batch_size=32, epochs=3):
         for i, (state, _, reward, done) in enumerate(batch):
             if not done:
                 # Partial Q formula
-                new_q = reward + gamma * next_qs[i] - qs[i]
+                new_q = reward + gamma * next_qs[i]
             else:
                 new_q = reward
 
@@ -107,14 +110,32 @@ def train(batch_size=32, epochs=3):
 model = create_q_model()
 
 # Experience replay buffers
+action_history = []
+state_history = []
+state_next_history = []
+rewards_history = []
+done_history = []
 episode_reward_history = []
 running_reward = 0
 episode_count = 1
-
+frame_count = 0
+# Number of frames to take random action and observe output
+epsilon_random_frames = 50000
+# Number of frames for exploration
+epsilon_greedy_frames = 100_000.0
+# Maximum replay length
+# Note: The Deepmind paper suggests 1000000 however this causes memory issues
+max_memory_length = 10_000
+# Train the model after 4 actions
+update_after_actions = 4
+# How often to update the target network
+update_target_network = 10000
+# Using huber loss for stability
+loss_function = keras.losses.Huber()
 env = Tetris.Tetris()
 total_lines_cleared = 0
 action_count = 0
-TAG = 1
+TAG = 3
 update_after_episodes = 1
 
 singles = []
@@ -194,8 +215,8 @@ try:
             avg_doubles = mean(doubles[-log_every:])
             avg_triples = mean(triples[-log_every:])
             avg_tetrises = mean(tetrises[-log_every:])
-            avg_total = mean(singles[-log_every:] + 2 * doubles[-log_every:]
-                             + 3 * triples[-log_every:] + 4 * tetrises[-log_every:])
+            avg_total = mean(singles[-log_every:]) + 2 * mean(doubles[-log_every:]) \
+                        + 3 * mean(triples[-log_every:]) + 4 * mean(tetrises[-log_every:])
 
             # Update running reward to check condition for solving
             with open('reports/report_{}.csv'.format(TAG), 'a') as f:
@@ -203,7 +224,7 @@ try:
                                                         avg_doubles, avg_triples,
                                                         avg_tetrises, avg_total, avg_score))
         episode_count += 1
-except:
+except SystemExit:
     model.save('models/_{}'.format(TAG))
 
 

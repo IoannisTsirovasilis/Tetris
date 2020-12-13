@@ -5,6 +5,7 @@ import GraphicsManager as GraphicsManager
 from math import floor
 from time import sleep
 
+print('Generic Game Controller')
 
 PIVOT = [2, 5]
 H_SPEED = 80
@@ -51,6 +52,7 @@ def get_piece_id(piece):
     else:
         return 6
 
+
 def copy_env_to_simulation():
     for i in range(BOARD.shape[0]):
         for j in range(BOARD.shape[1]):
@@ -80,7 +82,7 @@ def v_collision(board, is_simulation):
     c = get_piece_coords(is_simulation)
     for j in range(4):
         # if piece is going to overlap another piece below, don't move it
-        if board[c[j][0]+1][c[j][1]] == MAP_BLOCK and [c[j][0] + 1, c[j][1]] not in c:
+        if board[c[j][0] + 1][c[j][1]] == MAP_BLOCK and [c[j][0] + 1, c[j][1]] not in c:
             return False
     return True
 
@@ -150,7 +152,7 @@ def r_move(ptr, index, r, board, pivot, is_simulation):
             except IndexError:
                 return False
             for j in range(4):
-                if c[j][0] != pivot[0] or c[j][1] != pivot[1]: # pivot block doesn't rotate
+                if c[j][0] != pivot[0] or c[j][1] != pivot[1]:  # pivot block doesn't rotate
                     # erase block
                     board[c[j][0]][c[j][1]] = MAP_EMPTY
             for j in range(4):
@@ -196,12 +198,30 @@ def spawn_piece(pts):
             if pts[i][j] == MAP_EMPTY:
                 continue
             else:
-                if BOARD[(i+2)][(j+4) - (2 - pts.shape[0])] == MAP_BLOCK:
+                if BOARD[(i + 2)][(j + 4) - (2 - pts.shape[0])] == MAP_BLOCK:
                     game_over = True
 
-                BOARD[(i+2)][(j+4) - (2 - pts.shape[0])] = pts[i][j]
+                BOARD[(i + 2)][(j + 4) - (2 - pts.shape[0])] = pts[i][j]
                 COORDS[k][0] = i + 2
-                COORDS[k][1] = (j+4) - (2 - pts.shape[0])
+                COORDS[k][1] = (j + 4) - (2 - pts.shape[0])
+                SIMULATE_COORDS[k][0] = i + 2
+                SIMULATE_COORDS[k][1] = (j + 4) - (2 - pts.shape[0])
+                k += 1
+    return game_over
+
+
+def spawn_piece_simulate(pts):
+    game_over = False
+    k = 0
+    for i in range(pts.shape[0]):
+        for j in range(pts.shape[1]):
+            if pts[i][j] == MAP_EMPTY:
+                continue
+            else:
+                if SIMULATE_BOARD[(i + 2)][(j + 4) - (2 - pts.shape[0])] == MAP_BLOCK:
+                    game_over = True
+
+                SIMULATE_BOARD[(i + 2)][(j + 4) - (2 - pts.shape[0])] = pts[i][j]
                 SIMULATE_COORDS[k][0] = i + 2
                 SIMULATE_COORDS[k][1] = (j + 4) - (2 - pts.shape[0])
                 k += 1
@@ -281,7 +301,7 @@ class GameController:
 
     def create_piece_sequence(self):
         for i in range(7):
-            self.next_pieces.append(np.copy(PIECES[random.randint(0, len(PIECES)-1)]))
+            self.next_pieces.append(np.copy(PIECES[random.randint(0, len(PIECES) - 1)]))
 
     # vertical piece movement
     def v_move(self, index, board, pivot, is_simulation):
@@ -296,7 +316,7 @@ class GameController:
                     board[c[j][0]][c[j][1]] = MAP_EMPTY
                 # redraw it in its new position, one row lower
                 for j in range(4):
-                    board[c[j][0]+1][c[j][1]] = index
+                    board[c[j][0] + 1][c[j][1]] = index
                     c[j][0] += 1
                 # update pivot's position
                 pivot[0] += 1
@@ -322,9 +342,9 @@ class GameController:
             if lines_state[i]:
                 lines_to_erase += 1
                 board[i] = MAP_EMPTY
-                for r in reversed(range(i+1)):
+                for r in reversed(range(i + 1)):
                     if r > 0:
-                        board[r] = np.copy(board[r-1])
+                        board[r] = np.copy(board[r - 1])
         self.lines += lines_to_erase
         if lines_to_erase > 0:
             self.score += lines_to_erase
