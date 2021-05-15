@@ -135,7 +135,7 @@ loss_function = keras.losses.Huber()
 env = Tetris.Tetris()
 total_lines_cleared = 0
 action_count = 0
-TAG = 3
+TAG = 'another_state'
 update_after_episodes = 1
 
 singles = []
